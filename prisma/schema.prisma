@@ -1,0 +1,264 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  COMPANY_ADMIN
+  COMPANY_MANAGER
+  EMPLOYEE
+}
+
+enum SurveyStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+enum QuestionType {
+  SCALE
+  MULTIPLE_CHOICE
+  TEXT
+  YES_NO
+}
+
+enum CheckinFrequency {
+  DAILY
+  WEEKLY
+}
+
+// ── Company (Tenant) ─────────────────────────────────────────────────────────
+
+model Company {
+  id                 String           @id @default(cuid())
+  name               String
+  slug               String           @unique
+  logoUrl            String?
+  primaryColor       String?
+  industry           String?
+  checkinFrequency   CheckinFrequency @default(WEEKLY)
+  anonymityThreshold Int              @default(5)
+  billingEmail       String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  users        User[]
+  teams        Team[]
+  surveys      Survey[]
+  inviteTokens InviteToken[]
+
+  @@map("companies")
+}
+
+// ── User ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String?
+  avatarUrl    String?
+  role         Role      @default(EMPLOYEE)
+  passwordHash String?
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  teamId String?
+  team   Team?   @relation(fields: [teamId], references: [id])
+
+  wellbeingEntries WellbeingEntry[]
+  surveyResponses  SurveyResponse[]
+  managedTeams     Team[]           @relation("TeamManager")
+  accounts         Account[]
+  sessions         Session[]
+
+  @@index([companyId])
+  @@index([teamId])
+  @@map("users")
+}
+
+// ── NextAuth ─────────────────────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ── Team ─────────────────────────────────────────────────────────────────────
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  managerId String?
+  manager   User?   @relation("TeamManager", fields: [managerId], references: [id])
+
+  members User[]
+  surveys Survey[] @relation("TeamSurveys")
+
+  @@index([companyId])
+  @@map("teams")
+}
+
+// ── WellbeingEntry ───────────────────────────────────────────────────────────
+
+model WellbeingEntry {
+  id        String   @id @default(cuid())
+  mood      Int
+  stress    Int
+  energy    Int
+  score     Float
+  note      String?  @db.Text
+  periodKey String
+  createdAt DateTime @default(now())
+
+  companyId String
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, periodKey])
+  @@index([companyId, periodKey])
+  @@index([userId])
+  @@map("wellbeing_entries")
+}
+
+// ── Survey ───────────────────────────────────────────────────────────────────
+
+model Survey {
+  id          String       @id @default(cuid())
+  title       String
+  description String?      @db.Text
+  status      SurveyStatus @default(DRAFT)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  isAnonymous Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  teams     Team[]           @relation("TeamSurveys")
+  questions SurveyQuestion[]
+  responses SurveyResponse[]
+
+  @@index([companyId])
+  @@map("surveys")
+}
+
+model SurveyQuestion {
+  id            String       @id @default(cuid())
+  text          String
+  type          QuestionType @default(SCALE)
+  order         Int
+  isRequired    Boolean      @default(true)
+  options       Json?
+  scaleMinLabel String?
+  scaleMaxLabel String?
+  createdAt     DateTime     @default(now())
+
+  surveyId String
+  survey   Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers  SurveyAnswer[]
+
+  @@index([surveyId])
+  @@map("survey_questions")
+}
+
+model SurveyResponse {
+  id          String   @id @default(cuid())
+  submittedAt DateTime @default(now())
+  companyId   String
+  surveyId    String
+  survey      Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  answers     SurveyAnswer[]
+
+  @@unique([userId, surveyId])
+  @@index([surveyId, companyId])
+  @@map("survey_responses")
+}
+
+model SurveyAnswer {
+  id          String   @id @default(cuid())
+  responseId  String
+  response    SurveyResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  questionId  String
+  question    SurveyQuestion @relation(fields: [questionId], references: [id])
+  scaleValue  Int?
+  textValue   String?  @db.Text
+  choiceValue String?
+  boolValue   Boolean?
+
+  @@map("survey_answers")
+}
+
+// ── InviteToken ───────────────────────────────────────────────────────────────
+
+model InviteToken {
+  id        String    @id @default(cuid())
+  token     String    @unique @default(cuid())
+  email     String?
+  role      Role      @default(EMPLOYEE)
+  teamId    String?
+  usedAt    DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("invite_tokens")
+}
