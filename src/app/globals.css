@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,600;1,9..144,700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -6,34 +6,64 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 40 20% 97%;
+    --foreground: 200 25% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 200 25% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 200 25% 10%;
     --primary: 173 75% 39%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 173 20% 93%;
+    --secondary-foreground: 173 40% 20%;
+    --muted: 40 15% 93%;
+    --muted-foreground: 200 10% 48%;
+    --accent: 173 30% 90%;
+    --accent-foreground: 173 60% 20%;
+    --destructive: 0 72% 56%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 200 15% 88%;
+    --input: 200 15% 88%;
     --ring: 173 75% 39%;
-    --radius: 0.75rem;
+    --radius: 0.875rem;
+    --sidebar-bg: #0a1f1c;
+    --sidebar-text: rgba(255,255,255,0.6);
+    --sidebar-text-active: #ffffff;
+    --sidebar-active-bg: rgba(20, 184, 166, 0.18);
   }
 
   * {
     @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 font-sans antialiased;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'DM Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "ss01", "ss02", "cv01";
+  }
+
+  /* Refined scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
   }
 }
 
@@ -41,4 +71,69 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  .font-display {
+    font-family: 'Fraunces', Georgia, serif;
+  }
+
+  /* Sidebar dot-pattern texture */
+  .sidebar-texture {
+    background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* Score ring clip */
+  .score-ring {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+
+  /* Metric bar animation */
+  .bar-fill {
+    transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Card hover lift */
+  .card-lift {
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .card-lift:hover {
+    box-shadow: 0 8px 24px -4px rgb(0 0 0 / 0.08), 0 2px 8px -2px rgb(0 0 0 / 0.04);
+    transform: translateY(-1px);
+  }
+
+  /* Gradient text */
+  .gradient-score {
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Animated pulse for active check-in prompt */
+  .pulse-ring {
+    animation: pulse-ring 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-ring {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.02); }
+  }
+
+  /* Fade-in-up animation */
+  .animate-fade-up {
+    animation: fade-up 0.5s ease forwards;
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Staggered children */
+  .stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger > *:nth-child(2) { animation-delay: 60ms; }
+  .stagger > *:nth-child(3) { animation-delay: 120ms; }
+  .stagger > *:nth-child(4) { animation-delay: 180ms; }
+  .stagger > *:nth-child(5) { animation-delay: 240ms; }
 }

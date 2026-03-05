@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { auth } from "@/lib/auth";
 import { getTrendData } from "@/lib/anonymize";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

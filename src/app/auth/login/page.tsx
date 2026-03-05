@@ -3,11 +3,8 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,7 +31,6 @@ export default function LoginPage() {
       return;
     }
 
-    // Fetch session to determine role-based redirect
     const res = await fetch("/api/auth/session");
     const session = await res.json();
     const role = session?.user?.role;
@@ -46,56 +42,96 @@ export default function LoginPage() {
     }
   }
 
+  const inputStyle = {
+    width: "100%",
+    padding: "0.625rem 0.875rem",
+    borderRadius: "0.75rem",
+    border: "1px solid hsl(200, 15%, 88%)",
+    background: "#fafaf9",
+    fontSize: "0.875rem",
+    color: "#111827",
+    outline: "none",
+    transition: "border-color 0.15s ease",
+  } as React.CSSProperties;
+
   return (
-    <Card className="shadow-card">
-      <CardHeader>
-        <CardTitle className="text-xl">Anmelden</CardTitle>
-        <CardDescription>Melde dich mit deiner ELYO-Zugangsdaten an.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-              {error}
-            </div>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="email">E-Mail</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="name@unternehmen.de"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Passwort</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          <Button
-            type="submit"
-            className="w-full bg-elyo-500 hover:bg-elyo-600 text-white"
-            disabled={loading}
+    <div className="animate-fade-up">
+      <div className="mb-8">
+        <h2
+          className="text-2xl font-semibold text-gray-900"
+          style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+        >
+          Willkommen zurück
+        </h2>
+        <p className="text-gray-400 text-sm mt-1">Melde dich mit deinen Zugangsdaten an.</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div
+            className="text-sm px-4 py-3 rounded-xl"
+            style={{ background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }}
           >
-            {loading ? "Anmelden..." : "Anmelden"}
-          </Button>
-        </form>
-        <p className="text-center text-sm text-slate-500 mt-4">
-          Noch kein Konto?{" "}
-          <Link href="/auth/register" className="text-elyo-600 hover:underline font-medium">
-            Unternehmen registrieren
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">E-Mail</label>
+          <input
+            type="email"
+            placeholder="name@unternehmen.de"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={inputStyle}
+            onFocus={e => (e.currentTarget.style.borderColor = "#14b8a6")}
+            onBlur={e => (e.currentTarget.style.borderColor = "hsl(200, 15%, 88%)")}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Passwort</label>
+          <input
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={inputStyle}
+            onFocus={e => (e.currentTarget.style.borderColor = "#14b8a6")}
+            onBlur={e => (e.currentTarget.style.borderColor = "hsl(200, 15%, 88%)")}
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 mt-2"
+          style={{
+            background: loading ? "#9ca3af" : "linear-gradient(135deg, #14b8a6, #0d9488)",
+            cursor: loading ? "not-allowed" : "pointer",
+          }}
+        >
+          {loading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Anmelden…
+            </>
+          ) : (
+            <>
+              Anmelden <ArrowRight className="w-4 h-4" />
+            </>
+          )}
+        </button>
+      </form>
+
+      <p className="text-center text-sm text-gray-400 mt-6">
+        Noch kein Konto?{" "}
+        <Link href="/auth/register" className="font-semibold hover:underline" style={{ color: "#14b8a6" }}>
+          Unternehmen registrieren
+        </Link>
+      </p>
+    </div>
   );
 }
