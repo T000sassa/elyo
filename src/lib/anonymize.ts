@@ -20,6 +20,75 @@ export interface TrendPoint {
   respondents: number;
 }
 
+export interface ContinuityResult {
+  /** % der aktiven MA, die in mind. 3 der letzten 4 Perioden eingecheckt haben */
+  continuityRate: number;
+  /** % der MA, die in der aktuellen Periode eingecheckt haben */
+  activeUserRate: number;
+  /** Gesamtzahl aktiver MA (isActive=true) */
+  totalEmployees: number;
+  /** Anzahl MA, die diese Periode bereits eingecheckt haben */
+  checkedInThisPeriod: number;
+  isAboveThreshold: boolean;
+}
+
+/** Berechnet aktuellen periodKey (wöchentlich: YYYY-Www) */
+function currentPeriodKey(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const start = new Date(year, 0, 1);
+  const week = Math.ceil(
+    ((now.getTime() - start.getTime()) / 86400000 + start.getDay() + 1) / 7
+  );
+  return `${year}-W${String(week).padStart(2, "0")}`;
+}
+
+export async function getContinuityData(
+  companyId: string,
+  options: { threshold?: number } = {}
+): Promise<ContinuityResult> {
+  const threshold = options.threshold ?? MIN_GROUP_SIZE;
+
+  const totalEmployees = await prisma.user.count({
+    where: { companyId, role: "EMPLOYEE", isActive: true },
+  });
+
+  if (totalEmployees < threshold) {
+    return { continuityRate: 0, activeUserRate: 0, totalEmployees, checkedInThisPeriod: 0, isAboveThreshold: false };
+  }
+
+  const currentPeriod = currentPeriodKey();
+
+  const checkedInThisPeriod = await prisma.wellbeingEntry.count({
+    where: { companyId, periodKey: currentPeriod },
+  });
+
+  // letzte 4 Perioden ermitteln
+  const recentPeriods = await prisma.wellbeingEntry.groupBy({
+    by: ["periodKey"],
+    where: { companyId },
+    orderBy: { periodKey: "desc" },
+    take: 4,
+  });
+  const periodKeys = recentPeriods.map((p) => p.periodKey);
+
+  let continuousUsers = 0;
+  if (periodKeys.length >= 3) {
+    const userCheckins = await prisma.wellbeingEntry.groupBy({
+      by: ["userId"],
+      where: { companyId, periodKey: { in: periodKeys } },
+      _count: { periodKey: true },
+      having: { periodKey: { _count: { gte: 3 } } },
+    });
+    continuousUsers = userCheckins.length;
+  }
+
+  const continuityRate = Math.round((continuousUsers / totalEmployees) * 100);
+  const activeUserRate = Math.round((checkedInThisPeriod / totalEmployees) * 100);
+
+  return { continuityRate, activeUserRate, totalEmployees, checkedInThisPeriod, isAboveThreshold: true };
+}
+
 export async function getAggregatedMetrics(
   companyId: string,
   options: {
@@ -50,14 +119,7 @@ export async function getAggregatedMetrics(
 
   const count = result._count.id;
   if (count < threshold) {
-    return {
-      avgMood: 0,
-      avgStress: 0,
-      avgEnergy: 0,
-      avgScore: 0,
-      responseCount: count,
-      isAboveThreshold: false,
-    };
+    return { avgMood: 0, avgStress: 0, avgEnergy: 0, avgScore: 0, responseCount: count, isAboveThreshold: false };
   }
 
   return {
@@ -72,11 +134,7 @@ export async function getAggregatedMetrics(
 
 export async function getTrendData(
   companyId: string,
-  options: {
-    teamId?: string;
-    limit?: number;
-    threshold?: number;
-  } = {}
+  options: { teamId?: string; limit?: number; threshold?: number } = {}
 ): Promise<TrendPoint[]> {
   const threshold = options.threshold ?? MIN_GROUP_SIZE;
 

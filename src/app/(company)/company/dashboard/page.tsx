@@ -1,8 +1,8 @@
 export const dynamic = "force-dynamic";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getAggregatedMetrics, getTrendData } from "@/lib/anonymize";
-import { Shield, AlertTriangle, TrendingUp, Users, ArrowRight } from "lucide-react";
+import { getAggregatedMetrics, getTrendData, getContinuityData } from "@/lib/anonymize";
+import { Shield, AlertTriangle, TrendingUp, Users, ArrowRight, Activity, UserCheck } from "lucide-react";
 import Link from "next/link";
 
 function scoreColor(score: number) {
@@ -145,13 +145,14 @@ export default async function CompanyDashboard() {
     select: { name: true, anonymityThreshold: true },
   });
 
-  const [metrics, teams, trendData] = await Promise.all([
+  const [metrics, teams, trendData, continuity] = await Promise.all([
     getAggregatedMetrics(companyId),
     prisma.team.findMany({
       where: { companyId },
       select: { id: true, name: true, color: true, _count: { select: { members: true } } },
     }),
     getTrendData(companyId, { limit: 6 }),
+    getContinuityData(companyId, { threshold: company?.anonymityThreshold }),
   ]);
 
   const teamsWithMetrics = await Promise.all(
