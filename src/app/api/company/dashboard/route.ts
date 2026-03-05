@@ -8,12 +8,17 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const companyId = session.user.companyId;
+  const isManager = session.user.role === "COMPANY_MANAGER";
+  const managedTeamId = session.user.managedTeamId ?? undefined;
+
+  // Managers are scoped to their team only
+  const teamFilter = isManager && managedTeamId ? { id: managedTeamId } : {};
 
   const [metrics, trend, teams] = await Promise.all([
-    getAggregatedMetrics(companyId),
-    getTrendData(companyId, { limit: 12 }),
+    getAggregatedMetrics(companyId, isManager && managedTeamId ? { teamId: managedTeamId } : {}),
+    getTrendData(companyId, { limit: 12, teamId: isManager ? managedTeamId : undefined }),
     prisma.team.findMany({
-      where: { companyId },
+      where: { companyId, ...teamFilter },
       select: { id: true, name: true, color: true, _count: { select: { members: true } } },
     }),
   ]);

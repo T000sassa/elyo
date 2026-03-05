@@ -14,14 +14,6 @@ import {
   Building2,
 } from "lucide-react";
 
-const nav = [
-  { href: "/company/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/company/teams", label: "Teams", icon: Users },
-  { href: "/company/reports", label: "Reports", icon: BarChart2 },
-  { href: "/company/surveys", label: "Umfragen", icon: ClipboardList },
-  { href: "/company/settings", label: "Einstellungen", icon: Settings },
-];
-
 function Initials({ name }: { name?: string | null }) {
   const parts = (name ?? "A").trim().split(" ");
   const init = parts.length >= 2
@@ -33,6 +25,18 @@ function Initials({ name }: { name?: string | null }) {
 export function CompanySidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+
+  const isManager = session?.user?.role === "COMPANY_MANAGER";
+  const roleLabel = isManager ? "Manager" : "Admin";
+
+  const nav = [
+    { href: "/company/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/company/teams", label: isManager ? "Mein Team" : "Teams", icon: Users },
+    { href: "/company/reports", label: "Reports", icon: BarChart2 },
+    { href: "/company/surveys", label: "Umfragen", icon: ClipboardList },
+    // Settings only for admins
+    ...(!isManager ? [{ href: "/company/settings", label: "Einstellungen", icon: Settings }] : []),
+  ];
 
   return (
     <aside
@@ -60,7 +64,7 @@ export function CompanySidebar() {
           className="ml-auto text-[10px] font-medium px-1.5 py-0.5 rounded-full"
           style={{ background: "rgba(20,184,166,0.2)", color: "#5eead4" }}
         >
-          Admin
+          {roleLabel}
         </span>
       </div>
 
@@ -69,7 +73,7 @@ export function CompanySidebar() {
         <div className="flex items-center gap-2">
           <Building2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#5eead4" }} />
           <span className="text-xs font-medium truncate" style={{ color: "rgba(255,255,255,0.7)" }}>
-            Unternehmensportal
+            {isManager ? "Team-Portal" : "Unternehmensportal"}
           </span>
         </div>
       </div>
@@ -122,10 +126,10 @@ export function CompanySidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white text-xs font-medium truncate">
-              {session?.user?.name ?? "Admin"}
+              {session?.user?.name ?? roleLabel}
             </p>
             <p className="text-[10px] truncate" style={{ color: "var(--sidebar-text)" }}>
-              Company Admin
+              {isManager ? "Team Manager" : "Company Admin"}
             </p>
           </div>
         </div>

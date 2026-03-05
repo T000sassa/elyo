@@ -7,8 +7,14 @@ export async function GET() {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const isManager = session.user.role === "COMPANY_MANAGER";
+  const managedTeamId = session.user.managedTeamId;
+
   const teams = await prisma.team.findMany({
-    where: { companyId: session.user.companyId },
+    where: {
+      companyId: session.user.companyId,
+      ...(isManager && managedTeamId ? { id: managedTeamId } : {}),
+    },
     include: { _count: { select: { members: true } }, manager: { select: { name: true } } },
     orderBy: { name: "asc" },
   });
@@ -19,6 +25,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "COMPANY_ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
   const parsed = TeamSchema.safeParse(body);

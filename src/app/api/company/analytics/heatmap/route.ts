@@ -3,8 +3,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export interface HeatmapCell {
-  dayOfWeek: number; // 0=So, 1=Mo ... 6=Sa
-  hour: number;      // 0-23
+  dayOfWeek: number;
+  hour: number;
   count: number;
 }
 
@@ -13,17 +13,38 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (session.user.role === "EMPLOYEE") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  // Use raw SQL to extract day-of-week and hour from createdAt
-  const rows = await prisma.$queryRaw<{ day_of_week: number; hour: number; count: bigint }[]>`
-    SELECT
-      EXTRACT(DOW FROM "created_at")::int  AS day_of_week,
-      EXTRACT(HOUR FROM "created_at")::int AS hour,
-      COUNT(*)::bigint                     AS count
-    FROM wellbeing_entries
-    WHERE company_id = ${session.user.companyId}
-    GROUP BY day_of_week, hour
-    ORDER BY day_of_week, hour
-  `;
+  const companyId = session.user.companyId;
+  const isManager = session.user.role === "COMPANY_MANAGER";
+  const managedTeamId = session.user.managedTeamId;
+
+  let rows: { day_of_week: number; hour: number; count: bigint }[];
+
+  if (isManager && managedTeamId) {
+    // Manager: only entries from their team members
+    rows = await prisma.$queryRaw`
+      SELECT
+        EXTRACT(DOW FROM we."created_at")::int  AS day_of_week,
+        EXTRACT(HOUR FROM we."created_at")::int AS hour,
+        COUNT(*)::bigint                        AS count
+      FROM wellbeing_entries we
+      JOIN users u ON u.id = we."user_id"
+      WHERE we.company_id = ${companyId}
+        AND u."team_id" = ${managedTeamId}
+      GROUP BY day_of_week, hour
+      ORDER BY day_of_week, hour
+    `;
+  } else {
+    rows = await prisma.$queryRaw`
+      SELECT
+        EXTRACT(DOW FROM "created_at")::int  AS day_of_week,
+        EXTRACT(HOUR FROM "created_at")::int AS hour,
+        COUNT(*)::bigint                     AS count
+      FROM wellbeing_entries
+      WHERE company_id = ${companyId}
+      GROUP BY day_of_week, hour
+      ORDER BY day_of_week, hour
+    `;
+  }
 
   const cells: HeatmapCell[] = rows.map((r) => ({
     dayOfWeek: r.day_of_week,

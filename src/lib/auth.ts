@@ -39,12 +39,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           data: { lastLoginAt: new Date() },
         });
 
+        // For managers: find the team they manage
+        let managedTeamId: string | null = null;
+        if (user.role === "COMPANY_MANAGER") {
+          const managedTeam = await prisma.team.findFirst({
+            where: { managerId: user.id, companyId: user.companyId },
+            select: { id: true },
+          });
+          managedTeamId = managedTeam?.id ?? null;
+        }
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
           companyId: user.companyId,
+          managedTeamId,
         };
       },
     }),
@@ -55,6 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id;
         token.role = (user as { role: Role }).role;
         token.companyId = (user as { companyId: string }).companyId;
+        token.managedTeamId = (user as { managedTeamId?: string | null }).managedTeamId ?? null;
       }
       return token;
     },
@@ -63,6 +75,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
         session.user.companyId = token.companyId as string;
+        session.user.managedTeamId = token.managedTeamId as string | null | undefined;
       }
       return session;
     },

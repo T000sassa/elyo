@@ -6,8 +6,13 @@ export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const isManager = session.user.role === "COMPANY_MANAGER";
   const limit = parseInt(req.nextUrl.searchParams.get("limit") ?? "12");
-  const teamId = req.nextUrl.searchParams.get("teamId") ?? undefined;
+
+  // Managers: scope to their team; admins can override with ?teamId=
+  const teamId = isManager
+    ? (session.user.managedTeamId ?? undefined)
+    : (req.nextUrl.searchParams.get("teamId") ?? undefined);
 
   const trend = await getTrendData(session.user.companyId, { limit, teamId });
   return NextResponse.json({ trend });

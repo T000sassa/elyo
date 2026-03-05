@@ -10,12 +10,14 @@ declare module "next-auth" {
       name?: string | null;
       role: Role;
       companyId: string;
+      managedTeamId?: string | null;
     };
   }
 
   interface User {
     role: Role;
     companyId: string;
+    managedTeamId?: string | null;
   }
 }
 
@@ -23,5 +25,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     role: Role;
     companyId: string;
+    managedTeamId?: string | null;
   }
 }
