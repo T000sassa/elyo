@@ -20,6 +20,11 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Fix: Nur EMPLOYEE darf Check-ins einreichen
+  if (session.user.role !== "EMPLOYEE") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = await req.json();
   const parsed = CheckinSchema.safeParse(body);
   if (!parsed.success) {
@@ -37,10 +42,11 @@ export async function POST(req: NextRequest) {
 
   const periodKey = getPeriodKey(user.company.checkinFrequency);
 
+  // userId kommt immer aus der Session, nie aus dem Request-Body
   const entry = await prisma.wellbeingEntry.upsert({
-    where: { userId_periodKey: { userId: user.id, periodKey } },
+    where: { userId_periodKey: { userId: session.user.id, periodKey } },
     update: { mood, stress, energy, score, note },
-    create: { userId: user.id, companyId: user.companyId, mood, stress, energy, score, note, periodKey },
+    create: { userId: session.user.id, companyId: user.companyId, mood, stress, energy, score, note, periodKey },
   });
 
   return NextResponse.json({ success: true, score: entry.score, periodKey });

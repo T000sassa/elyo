@@ -11,6 +11,14 @@ export async function GET() {
   const isManager = session.user.role === "COMPANY_MANAGER";
   const managedTeamId = session.user.managedTeamId ?? undefined;
 
+  // Fix: Manager ohne zugewiesenes Team darf keine Daten sehen
+  if (isManager && !managedTeamId) {
+    return NextResponse.json(
+      { error: "Kein Team zugewiesen. Bitte wenden Sie sich an Ihren Administrator." },
+      { status: 403 }
+    );
+  }
+
   // Managers are scoped to their team only
   const teamFilter = isManager && managedTeamId ? { id: managedTeamId } : {};
 

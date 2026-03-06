@@ -3,6 +3,17 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTrendData, getAggregatedMetrics } from "@/lib/anonymize";
 
+/**
+ * Fix: CSV Injection Prevention
+ * Verhindert Formula-Injection in Excel (=, +, -, @, | als Prefix → gefährlich)
+ */
+function sanitizeCSV(value: string): string {
+  if (/^[=+\-@|]/.test(value)) {
+    return `'${value}`;
+  }
+  return value.replace(/"/g, '""');
+}
+
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -38,8 +49,8 @@ export async function GET(req: NextRequest) {
     const now = new Date().toISOString().slice(0, 10);
     const lines: string[] = [];
 
-    // Header comment
-    lines.push(`# ELYO ESG Wellbeing Report — ${company?.name ?? ""}`)
+    // Fix: company.name via sanitizeCSV — verhindert CSV/Formula-Injection
+    lines.push(`# ELYO ESG Wellbeing Report — ${sanitizeCSV(company?.name ?? "")}`);
     lines.push(`# Exportiert: ${now}`);
     lines.push(`# Anonymitätsschwellenwert: ${company?.anonymityThreshold ?? 5} Mitarbeiter`);
     lines.push(`# Alle Daten sind aggregiert und anonymisiert`);
@@ -61,10 +72,10 @@ export async function GET(req: NextRequest) {
     for (const t of teamsMetrics) {
       if (t.metrics.isAboveThreshold) {
         lines.push(
-          `"${t.name}",${t.memberCount},${t.metrics.avgScore},${t.metrics.avgMood},${t.metrics.avgStress},${t.metrics.avgEnergy},${t.metrics.responseCount}`
+          `"${sanitizeCSV(t.name)}",${t.memberCount},${t.metrics.avgScore},${t.metrics.avgMood},${t.metrics.avgStress},${t.metrics.avgEnergy},${t.metrics.responseCount}`
         );
       } else {
-        lines.push(`"${t.name}",${t.memberCount},Zu wenig Daten,,,, `);
+        lines.push(`"${sanitizeCSV(t.name)}",${t.memberCount},Zu wenig Daten,,,,`);
       }
     }
 

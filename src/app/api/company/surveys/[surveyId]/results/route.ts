@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { MIN_GROUP_SIZE } from "@/lib/anonymize";
 
 export async function GET(
   _req: NextRequest,
@@ -10,16 +11,37 @@ export async function GET(
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (session.user.role === "EMPLOYEE") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const survey = await prisma.survey.findFirst({
-    where: { id: params.surveyId, companyId: session.user.companyId },
-    include: {
-      questions: { orderBy: { order: "asc" } },
-      _count: { select: { responses: true } },
-    },
-  });
+  const [survey, company] = await Promise.all([
+    prisma.survey.findFirst({
+      where: { id: params.surveyId, companyId: session.user.companyId },
+      include: {
+        questions: { orderBy: { order: "asc" } },
+        _count: { select: { responses: true } },
+      },
+    }),
+    prisma.company.findUnique({
+      where: { id: session.user.companyId },
+      select: { anonymityThreshold: true },
+    }),
+  ]);
+
   if (!survey) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const responseCount = survey._count.responses;
+  const threshold = company?.anonymityThreshold ?? MIN_GROUP_SIZE;
+
+  // Fix: Anonymitätsschwellenwert — Survey-Ergebnisse nur ab Mindestanzahl Teilnehmer
+  if (responseCount < threshold) {
+    return NextResponse.json(
+      {
+        error: "Zu wenige Antworten für anonyme Auswertung.",
+        minRequired: threshold,
+        current: responseCount,
+        isAboveThreshold: false,
+      },
+      { status: 403 }
+    );
+  }
 
   // Aggregate answers per question — never return individual responses
   const questionResults = await Promise.all(
@@ -84,6 +106,7 @@ export async function GET(
   return NextResponse.json({
     survey: { id: survey.id, title: survey.title, status: survey.status },
     responseCount,
+    isAboveThreshold: true,
     questions: questionResults,
   });
 }

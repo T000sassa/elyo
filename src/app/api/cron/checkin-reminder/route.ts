@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendCheckinReminder } from "@/lib/email";
 
@@ -6,7 +7,20 @@ import { sendCheckinReminder } from "@/lib/email";
 // Protected by CRON_SECRET header
 export async function POST(req: NextRequest) {
   const secret = req.headers.get("x-cron-secret");
-  if (secret !== process.env.CRON_SECRET) {
+  const expected = process.env.CRON_SECRET;
+
+  // Fix: Timing-Safe-Vergleich verhindert Timing-Side-Channel-Angriffe
+  if (!secret || !expected) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const secretBuf = Buffer.from(secret);
+  const expectedBuf = Buffer.from(expected);
+
+  if (
+    secretBuf.length !== expectedBuf.length ||
+    !timingSafeEqual(secretBuf, expectedBuf)
+  ) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -21,10 +35,17 @@ export async function POST(req: NextRequest) {
   );
   const currentPeriod = `${year}-W${String(week).padStart(2, "0")}`;
 
-  // Get all active employees
+  // Fix: Explizit dokumentierter Multi-Tenant-Zugriff — Cron verarbeitet bewusst alle Companies.
+  // companyId-Filter nicht sinnvoll hier, da der Job alle Tenants gleichzeitig verarbeitet.
+  // Scoping erfolgt pro Company über die company-Relation.
   const employees = await prisma.user.findMany({
     where: { role: "EMPLOYEE", isActive: true },
-    select: { id: true, email: true, name: true, company: { select: { name: true, checkinFrequency: true } } },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      company: { select: { name: true, checkinFrequency: true } },
+    },
   });
 
   // Find who already checked in this period

@@ -5,7 +5,11 @@ import bcrypt from "bcryptjs";
 import type { Role } from "@prisma/client";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    // Fix: 8h Session-Dauer für Gesundheitsplattform (statt Standard 30 Tage)
+    maxAge: 60 * 60 * 8,
+  },
   pages: {
     signIn: "/login",
   },

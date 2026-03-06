@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { RegisterSchema } from "@/lib/validations";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import bcrypt from "bcryptjs";
 
 function slugify(str: string): string {
@@ -20,6 +21,19 @@ async function uniqueSlug(base: string): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
+  // Fix: Rate-Limiting — max. 5 Registrierungen pro IP pro 15 Minuten
+  const ip = getClientIP(req.headers);
+  const { allowed, resetAt } = rateLimit(`register:${ip}`, 5, 15 * 60_000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Zu viele Anfragen. Bitte versuchen Sie es später erneut." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((resetAt - Date.now()) / 1000)) },
+      }
+    );
+  }
+
   const body = await req.json();
   const parsed = RegisterSchema.safeParse(body);
 
