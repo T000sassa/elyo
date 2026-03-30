@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import type { Role } from "@prisma/client";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true, // Erlaubt LAN-Zugriff (Expo Go auf physischem Gerät)
   session: {
     strategy: "jwt",
     // Fix: 8h Session-Dauer für Gesundheitsplattform (statt Standard 30 Tage)
