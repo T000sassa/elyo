@@ -33,7 +33,7 @@ export interface ContinuityResult {
 }
 
 /** Berechnet aktuellen periodKey (wöchentlich: YYYY-Www) */
-function currentPeriodKey(): string {
+export function currentPeriodKey(): string {
   const now = new Date();
   const year = now.getFullYear();
   const start = new Date(year, 0, 1);
