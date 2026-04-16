@@ -21,7 +21,7 @@ export function MetricChip({
   className,
 }: MetricChipProps) {
   const TrendIcon =
-    trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus
+    trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : trend === 'neutral' ? Minus : null
 
   return (
     <div
@@ -39,7 +39,7 @@ export function MetricChip({
         {unit && (
           <span className="text-xs font-normal text-gray-400">{unit}</span>
         )}
-        {trend && (
+        {TrendIcon && (
           <TrendIcon
             className="w-3.5 h-3.5 ml-auto"
             style={{ color: trend === 'down' ? '#ef4444' : color }}
