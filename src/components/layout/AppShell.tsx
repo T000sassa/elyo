@@ -17,7 +17,6 @@ import {
   Settings,
   Star,
   Package,
-  MessageSquare,
   TrendingUp,
   ChevronLeft,
   ChevronRight,
@@ -78,14 +77,26 @@ function EloyLogo() {
   )
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname()
-  const { role } = useRole()
-  const [collapsed, setCollapsed] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const navItems = NAV_ITEMS[role]
+interface SidebarContentProps {
+  mobile?: boolean
+  collapsed: boolean
+  role: DemoRole
+  pathname: string
+  navItems: NavItem[]
+  onCollapse: () => void
+  onClose: () => void
+}
 
-  const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => (
+function SidebarContent({
+  mobile = false,
+  collapsed,
+  role,
+  pathname,
+  navItems,
+  onCollapse,
+  onClose,
+}: SidebarContentProps) {
+  return (
     <aside
       className={cn(
         'flex flex-col min-h-screen sidebar-texture transition-all duration-300',
@@ -111,7 +122,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
         {!mobile && (
           <button
-            onClick={() => setCollapsed(c => !c)}
+            onClick={onCollapse}
             className="w-6 h-6 rounded-full flex items-center justify-center ml-auto"
             style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
           >
@@ -139,7 +150,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link
               key={href}
               href={href}
-              onClick={() => setMobileOpen(false)}
+              onClick={onClose}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
                 collapsed && !mobile ? 'justify-center' : '',
@@ -174,12 +185,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
     </aside>
   )
+}
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const { role } = useRole()
+  const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const navItems = NAV_ITEMS[role]
 
   return (
     <div className="flex min-h-screen" style={{ background: 'hsl(40, 20%, 97%)' }}>
       {/* Desktop sidebar */}
       <div className="hidden lg:flex">
-        <SidebarContent />
+        <SidebarContent
+          collapsed={collapsed}
+          role={role}
+          pathname={pathname}
+          navItems={navItems}
+          onCollapse={() => setCollapsed(c => !c)}
+          onClose={() => setMobileOpen(false)}
+        />
       </div>
 
       {/* Mobile overlay */}
@@ -187,7 +213,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
           <div className="absolute left-0 top-0 h-full z-50">
-            <SidebarContent mobile />
+            <SidebarContent
+              mobile
+              collapsed={collapsed}
+              role={role}
+              pathname={pathname}
+              navItems={navItems}
+              onCollapse={() => setCollapsed(c => !c)}
+              onClose={() => setMobileOpen(false)}
+            />
           </div>
         </div>
       )}
