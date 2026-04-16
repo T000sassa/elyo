@@ -89,6 +89,10 @@ describe('InviteSchema', () => {
     expect(() => InviteSchema.parse({ role: 'COMPANY_ADMIN' })).not.toThrow()
   })
 
+  it('accepts COMPANY_MANAGER role', () => {
+    expect(() => InviteSchema.parse({ role: 'COMPANY_MANAGER' })).not.toThrow()
+  })
+
   it('rejects invalid role', () => {
     expect(() => InviteSchema.parse({ role: 'SUPERADMIN' })).toThrow()
   })
