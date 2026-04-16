@@ -124,4 +124,16 @@ describe('sendWeeklyDigest', () => {
       })
     )
   })
+
+  it('returns false when sendMail throws', async () => {
+    vi.stubEnv('SMTP_HOST', 'smtp.example.com')
+    vi.stubEnv('SMTP_USER', 'user@example.com')
+    vi.stubEnv('SMTP_PASS', 'secret')
+    sendMailMock.mockRejectedValue(new Error('SMTP timeout'))
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const result = await sendWeeklyDigest(BASE_DIGEST_OPTS)
+    expect(result).toBe(false)
+    consoleSpy.mockRestore()
+  })
 })
