@@ -81,6 +81,8 @@ model User {
   wellbeingEntries WellbeingEntry[]
   surveyResponses  SurveyResponse[]
   managedTeams     Team[]           @relation("TeamManager")
+  anamnesisProfile AnamnesisProfile?
+  healthDocuments  HealthDocument[]
   accounts         Account[]
   sessions         Session[]
 
@@ -244,6 +246,49 @@ model SurveyAnswer {
   boolValue   Boolean?
 
   @@map("survey_answers")
+}
+
+// ── AnamnesisProfile ──────────────────────────────────────────────────────────
+
+model AnamnesisProfile {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completionPct Int       @default(0)
+
+  // Wave 1 – at onboarding
+  birthYear      Int?
+  biologicalSex  String?
+  activityLevel  String?
+  sleepQuality   String?
+  stressTendency String?
+
+  // Wave 2 – after week 1
+  smokingStatus  String?
+  nutritionType  String?
+
+  // Wave 3 – user-initiated (no sensitive details)
+  chronicPatterns String[]
+  hasMedication   Boolean?
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("anamnesis_profiles")
+}
+
+// ── HealthDocument ────────────────────────────────────────────────────────────
+
+model HealthDocument {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String
+  fileName   String
+  uploadedAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("health_documents")
 }
 
 // ── InviteToken ───────────────────────────────────────────────────────────────
