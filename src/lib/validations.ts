@@ -45,4 +45,19 @@ export const OnboardingSchema = z.object({
 
 export const BulkInviteSchema = z.object({
   emails: z.array(z.string().email('Ungültige E-Mail-Adresse')).min(1).max(500),
+})
+
+export const AnamnesisSchema = z.object({
+  // Wave 1
+  birthYear:      z.number().int().min(1920).max(new Date().getFullYear() - 16).optional(),
+  biologicalSex:  z.enum(['male', 'female', 'diverse', 'prefer_not']).optional(),
+  activityLevel:  z.enum(['sedentary', 'light', 'moderate', 'active', 'very_active']).optional(),
+  sleepQuality:   z.enum(['poor', 'fair', 'good', 'excellent']).optional(),
+  stressTendency: z.enum(['low', 'medium', 'high']).optional(),
+  // Wave 2
+  smokingStatus:  z.enum(['never', 'former', 'current']).optional(),
+  nutritionType:  z.enum(['omnivore', 'vegetarian', 'vegan', 'other']).optional(),
+  // Wave 3
+  chronicPatterns: z.array(z.string().max(50)).max(10).optional(),
+  hasMedication:  z.boolean().optional(),
 });
