@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { LoginSchema, RegisterSchema, CheckinSchema, InviteSchema } from '../validations'
+import { LoginSchema, RegisterSchema, CheckinSchema, InviteSchema, OnboardingSchema, BulkInviteSchema } from '../validations'
 
 describe('LoginSchema', () => {
   it('accepts valid credentials', () => {
@@ -100,5 +100,63 @@ describe('InviteSchema', () => {
   it('defaults role to EMPLOYEE', () => {
     const result = InviteSchema.parse({})
     expect(result.role).toBe('EMPLOYEE')
+  })
+})
+
+describe('OnboardingSchema', () => {
+  const VALID = {
+    companyName: 'Acme GmbH',
+    adminName: 'Max Müller',
+    email: 'admin@acme.de',
+    password: 'secret1234',
+  }
+
+  it('accepts minimal valid data', () => {
+    expect(OnboardingSchema.safeParse(VALID).success).toBe(true)
+  })
+
+  it('applies defaults: anonymityThreshold=5, checkinFrequency=WEEKLY, country=DE', () => {
+    const result = OnboardingSchema.safeParse(VALID)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.anonymityThreshold).toBe(5)
+      expect(result.data.checkinFrequency).toBe('WEEKLY')
+      expect(result.data.country).toBe('DE')
+    }
+  })
+
+  it('rejects company name shorter than 2 chars', () => {
+    expect(OnboardingSchema.safeParse({ ...VALID, companyName: 'A' }).success).toBe(false)
+  })
+
+  it('rejects invalid email', () => {
+    expect(OnboardingSchema.safeParse({ ...VALID, email: 'not-an-email' }).success).toBe(false)
+  })
+
+  it('rejects password shorter than 8 chars', () => {
+    expect(OnboardingSchema.safeParse({ ...VALID, password: 'short' }).success).toBe(false)
+  })
+
+  it('rejects anonymityThreshold below 3', () => {
+    expect(OnboardingSchema.safeParse({ ...VALID, anonymityThreshold: 2 }).success).toBe(false)
+  })
+})
+
+describe('BulkInviteSchema', () => {
+  it('accepts list of valid emails', () => {
+    expect(BulkInviteSchema.safeParse({ emails: ['a@b.de', 'c@d.de'] }).success).toBe(true)
+  })
+
+  it('rejects invalid email in list', () => {
+    expect(BulkInviteSchema.safeParse({ emails: ['a@b.de', 'not-valid'] }).success).toBe(false)
+  })
+
+  it('rejects empty array', () => {
+    expect(BulkInviteSchema.safeParse({ emails: [] }).success).toBe(false)
+  })
+
+  it('rejects array with more than 500 entries', () => {
+    const emails = Array.from({ length: 501 }, (_, i) => `user${i}@company.de`)
+    expect(BulkInviteSchema.safeParse({ emails }).success).toBe(false)
   })
 })
