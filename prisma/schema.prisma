@@ -81,9 +81,11 @@ model User {
   wellbeingEntries WellbeingEntry[]
   surveyResponses  SurveyResponse[]
   managedTeams     Team[]           @relation("TeamManager")
-  anamnesisProfile AnamnesisProfile?
-  healthDocuments  HealthDocument[]
-  accounts         Account[]
+  anamnesisProfile  AnamnesisProfile?
+  healthDocuments   HealthDocument[]
+  userPoints        UserPoints?
+  pointTransactions PointTransaction[]
+  accounts          Account[]
   sessions         Session[]
 
   @@index([companyId])
@@ -289,6 +291,35 @@ model HealthDocument {
 
   @@index([userId])
   @@map("health_documents")
+}
+
+// ── UserPoints ────────────────────────────────────────────────────────────────
+
+model UserPoints {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  total       Int      @default(0)
+  level       String   @default("STARTER")
+  streak      Int      @default(0)
+  lastCheckin DateTime?
+  updatedAt   DateTime @updatedAt
+
+  @@map("user_points")
+}
+
+// ── PointTransaction ──────────────────────────────────────────────────────────
+
+model PointTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  points    Int
+  reason    String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("point_transactions")
 }
 
 // ── InviteToken ───────────────────────────────────────────────────────────────
