@@ -42,6 +42,8 @@ model Company {
   logoUrl            String?
   primaryColor       String?
   industry           String?
+  employeeRange      String?
+  country            String?
   checkinFrequency   CheckinFrequency @default(WEEKLY)
   anonymityThreshold Int              @default(5)
   billingEmail       String?
