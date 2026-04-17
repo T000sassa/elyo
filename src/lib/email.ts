@@ -169,3 +169,34 @@ export async function sendWeeklyDigest(opts: {
   `;
   return send(opts.to, `📊 ELYO Weekly Digest — ${opts.companyName}`, baseTemplate(content));
 }
+
+export async function sendInviteEmail(opts: {
+  to: string
+  companyName: string
+  inviteUrl: string
+}): Promise<boolean> {
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;color:#111827;font-weight:700;">Du wurdest zu ELYO eingeladen 🎉</h1>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6;">
+      <strong>${opts.companyName}</strong> nutzt ELYO Wellbeing, um das Wohlbefinden im Team zu stärken.
+      Du wurdest eingeladen, mitzumachen.
+    </p>
+    <p style="margin:0 0 16px;color:#374151;font-size:14px;line-height:1.6;">
+      ELYO ist anonym, sicher und dauert weniger als 60 Sekunden täglich.
+    </p>
+    <a
+      href="${opts.inviteUrl}"
+      style="display:inline-block;background:linear-gradient(135deg,#14b8a6,#0d9488);color:white;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:15px;font-weight:600;"
+    >
+      Einladung annehmen →
+    </a>
+    <p style="margin:24px 0 0;font-size:11px;color:#9ca3af;">
+      Dieser Link ist 14 Tage gültig. Du kannst jederzeit ablehnen oder dein Konto löschen.
+    </p>
+  `
+  return send(
+    opts.to,
+    `${opts.companyName} lädt dich zu ELYO Wellbeing ein`,
+    baseTemplate(content),
+  )
+}

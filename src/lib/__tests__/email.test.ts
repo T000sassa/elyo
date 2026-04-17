@@ -14,7 +14,7 @@ vi.mock('nodemailer', () => ({
   },
 }))
 
-import { sendCheckinReminder, sendWeeklyDigest } from '../email'
+import { sendCheckinReminder, sendWeeklyDigest, sendInviteEmail } from '../email'
 
 const BASE_CHECKIN_OPTS = {
   to: 'employee@company.de',
@@ -133,6 +133,68 @@ describe('sendWeeklyDigest', () => {
 
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const result = await sendWeeklyDigest(BASE_DIGEST_OPTS)
+    expect(result).toBe(false)
+    consoleSpy.mockRestore()
+  })
+})
+
+describe('sendInviteEmail', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.stubEnv('SMTP_HOST', '')
+    vi.stubEnv('SMTP_USER', '')
+    vi.stubEnv('SMTP_PASS', '')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('returns true and logs in dev mode', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const result = await sendInviteEmail({
+      to: 'employee@acme.de',
+      companyName: 'Acme GmbH',
+      inviteUrl: 'http://localhost:3000/auth/invite/abc123',
+    })
+    expect(result).toBe(true)
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[EMAIL DEV]'))
+    consoleSpy.mockRestore()
+  })
+
+  it('calls sendMail with correct recipient when SMTP is configured', async () => {
+    vi.stubEnv('SMTP_HOST', 'smtp.example.com')
+    vi.stubEnv('SMTP_USER', 'user@example.com')
+    vi.stubEnv('SMTP_PASS', 'secret')
+    sendMailMock.mockResolvedValue({ messageId: 'invite-id' })
+
+    const result = await sendInviteEmail({
+      to: 'employee@acme.de',
+      companyName: 'Acme GmbH',
+      inviteUrl: 'http://localhost:3000/auth/invite/abc123',
+    })
+
+    expect(result).toBe(true)
+    expect(sendMailMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'employee@acme.de',
+        subject: expect.stringContaining('Acme GmbH'),
+      }),
+    )
+  })
+
+  it('returns false when sendMail throws', async () => {
+    vi.stubEnv('SMTP_HOST', 'smtp.example.com')
+    vi.stubEnv('SMTP_USER', 'user@example.com')
+    vi.stubEnv('SMTP_PASS', 'secret')
+    sendMailMock.mockRejectedValue(new Error('SMTP error'))
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const result = await sendInviteEmail({
+      to: 'employee@acme.de',
+      companyName: 'Acme GmbH',
+      inviteUrl: 'http://localhost:3000/auth/invite/abc123',
+    })
     expect(result).toBe(false)
     consoleSpy.mockRestore()
   })
