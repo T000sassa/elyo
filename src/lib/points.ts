@@ -109,7 +109,7 @@ export async function calculateStreak(userId: string): Promise<number> {
 
   if (transactions.length === 0) return 0
 
-  const days = [...new Set(transactions.map((t: { createdAt: Date }) => t.createdAt.toISOString().slice(0, 10)))]
+  const days = Array.from(new Set(transactions.map((t: { createdAt: Date }) => t.createdAt.toISOString().slice(0, 10))))
 
   let streak = 0
   let expected = todayKey
