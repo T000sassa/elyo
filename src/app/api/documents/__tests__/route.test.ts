@@ -123,6 +123,20 @@ describe('GET /api/documents', () => {
 })
 
 describe('DELETE /api/documents/[id]', () => {
+  it('returns 401 when not authenticated', async () => {
+    mockAuth.mockResolvedValue(null)
+    const req = new Request('http://localhost/api/documents/doc-1', { method: 'DELETE' })
+    const res = await DELETE(req, { params: { id: 'doc-1' } })
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 403 when role is not EMPLOYEE', async () => {
+    mockAuth.mockResolvedValue({ user: { id: 'admin-1', role: 'COMPANY_ADMIN' } })
+    const req = new Request('http://localhost/api/documents/doc-1', { method: 'DELETE' })
+    const res = await DELETE(req, { params: { id: 'doc-1' } })
+    expect(res.status).toBe(403)
+  })
+
   it('returns 404 when document not found', async () => {
     mockPrismaFindUnique.mockResolvedValue(null)
     const req = new Request('http://localhost/api/documents/doc-99', { method: 'DELETE' })

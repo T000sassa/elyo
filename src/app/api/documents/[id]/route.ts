@@ -18,8 +18,13 @@ export async function DELETE(
     return NextResponse.json({ error: 'Not Found' }, { status: 404 })
   }
 
-  await del(doc.blobKey)
-  await prisma.userDocument.delete({ where: { id } })
+  try {
+    await del(doc.blobKey)
+    await prisma.userDocument.delete({ where: { id } })
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: 'delete_failed', detail }, { status: 502 })
+  }
 
   return new NextResponse(null, { status: 204 })
 }

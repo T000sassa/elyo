@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { put } from '@vercel/blob'
+import { put, del } from '@vercel/blob'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
@@ -21,20 +21,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'file_too_large' }, { status: 400 })
   }
 
-  const blob = await put(file.name, file, { access: 'public' })
-
-  const doc = await prisma.userDocument.create({
-    data: {
-      userId: session.user.id,
-      fileName: file.name,
-      blobUrl: blob.url,
-      blobKey: blob.pathname,
-      mimeType: file.type,
-      size: file.size,
-    },
-  })
-
-  return NextResponse.json({ data: doc })
+  let blob: Awaited<ReturnType<typeof put>> | null = null
+  try {
+    blob = await put(`documents/${session.user.id}/${Date.now()}-${file.name}`, file, { access: 'public' })
+    const doc = await prisma.userDocument.create({
+      data: {
+        userId: session.user.id,
+        fileName: file.name,
+        blobUrl: blob.url,
+        blobKey: blob.pathname,
+        mimeType: file.type,
+        size: file.size,
+      },
+    })
+    return NextResponse.json({ data: doc })
+  } catch (err) {
+    if (blob) await del(blob.pathname).catch(() => {})
+    const detail = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: 'upload_failed', detail }, { status: 502 })
+  }
 }
 
 export async function GET(req: NextRequest) {
