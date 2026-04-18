@@ -1,3 +1,6 @@
+import { MIN_GROUP_SIZE } from './anonymize'
+import { prisma } from './prisma'
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface ReportData {
@@ -136,11 +139,171 @@ export function getIndustryBenchmark(industry: string | null): {
   return BENCHMARKS[key] ?? BENCHMARKS.default
 }
 
-// ── getReportData (stub — implemented in Task 2) ──────────────────────────────
+// ── getReportData ─────────────────────────────────────────────────────────────
 
 export async function getReportData(
-  _companyId: string,
-  _period: { year: number; quarter?: number }
+  companyId: string,
+  period: { year: number; quarter?: number }
 ): Promise<ReportData> {
-  throw new Error('Not implemented')
+  const { from, to, label } = getPeriodBounds(period)
+  const prevBounds = getPrevPeriodBounds(period)
+  const entryWhere = { companyId, createdAt: { gte: from, lte: to } }
+
+  const [company, employeeCount] = await Promise.all([
+    prisma.company.findUnique({
+      where: { id: companyId },
+      select: { name: true, industry: true, anonymityThreshold: true },
+    }),
+    prisma.user.count({ where: { companyId, role: 'EMPLOYEE', isActive: true } }),
+  ])
+
+  if (!company) throw new Error(`Company ${companyId} not found`)
+
+  const threshold = company.anonymityThreshold ?? MIN_GROUP_SIZE
+
+  const [currentAgg, distinctUsers] = await Promise.all([
+    prisma.wellbeingEntry.aggregate({
+      where: entryWhere,
+      _avg: { score: true, mood: true, stress: true, energy: true },
+      _count: { id: true },
+    }),
+    prisma.wellbeingEntry.groupBy({
+      by: ['userId'],
+      where: entryWhere,
+    }),
+  ])
+
+  const checkinsTotal = currentAgg._count.id
+  const activeParticipants = distinctUsers.length
+  const vitalityIndex = checkinsTotal > 0
+    ? Math.round((currentAgg._avg.score ?? 0) * 10) / 10
+    : 0
+
+  const prevAgg = await prisma.wellbeingEntry.aggregate({
+    where: { companyId, createdAt: { gte: prevBounds.from, lte: prevBounds.to } },
+    _avg: { score: true },
+    _count: { id: true },
+  })
+  const prevVitality = prevAgg._count.id > 0
+    ? Math.round((prevAgg._avg.score ?? 0) * 10) / 10
+    : 0
+  const vitalityTrend = Math.round((vitalityIndex - prevVitality) * 10) / 10
+
+  const participationRate = employeeCount > 0
+    ? Math.round((activeParticipants / employeeCount) * 100) / 100
+    : 0
+
+  // ── teamBreakdown ────────────────────────────────────────────────────────────
+  const teams = await prisma.team.findMany({ where: { companyId } })
+  const aboveThresholdTeams: TeamBreakdownEntry[] = []
+  let belowMemberCount = 0
+  let belowTotalScore = 0
+  let belowTotalCount = 0
+  let belowDistinctCount = 0
+
+  for (const team of teams) {
+    const teamWhere = { companyId, createdAt: { gte: from, lte: to }, user: { teamId: team.id } }
+    const [teamAgg, teamDistinct, teamMemberCount] = await Promise.all([
+      prisma.wellbeingEntry.aggregate({
+        where: teamWhere,
+        _avg: { score: true },
+        _count: { id: true },
+      }),
+      prisma.wellbeingEntry.groupBy({ by: ['userId'], where: teamWhere }),
+      prisma.user.count({ where: { companyId, teamId: team.id, role: 'EMPLOYEE', isActive: true } }),
+    ])
+
+    if (teamAgg._count.id >= threshold) {
+      aboveThresholdTeams.push({
+        teamName: team.name,
+        participationRate: teamMemberCount > 0
+          ? Math.round((teamDistinct.length / teamMemberCount) * 100) / 100
+          : 0,
+        vitalityIndex: Math.round((teamAgg._avg.score ?? 0) * 10) / 10,
+        memberCount: teamMemberCount,
+      })
+    } else {
+      belowMemberCount += teamMemberCount
+      belowTotalScore += (teamAgg._avg.score ?? 0) * teamAgg._count.id
+      belowTotalCount += teamAgg._count.id
+      belowDistinctCount += teamDistinct.length
+    }
+  }
+
+  const belowEntry: TeamBreakdownEntry = {
+    teamName: `Weitere Teams (n<${threshold})`,
+    participationRate: belowMemberCount > 0
+      ? Math.round((belowDistinctCount / belowMemberCount) * 100) / 100
+      : 0,
+    vitalityIndex: belowTotalCount > 0
+      ? Math.round((belowTotalScore / belowTotalCount) * 10) / 10
+      : 0,
+    memberCount: belowMemberCount,
+  }
+
+  // ── trendData ────────────────────────────────────────────────────────────────
+  const windows = buildTrendWindows(period, to)
+  const trendData: TrendDataPoint[] = []
+
+  for (const w of windows) {
+    const windowWhere = { companyId, createdAt: { gte: w.from, lte: w.to } }
+    const [windowAgg, windowDistinct] = await Promise.all([
+      prisma.wellbeingEntry.aggregate({
+        where: windowWhere,
+        _avg: { score: true },
+        _count: { id: true },
+      }),
+      prisma.wellbeingEntry.groupBy({ by: ['userId'], where: windowWhere }),
+    ])
+    const count = windowAgg._count.id
+    trendData.push({
+      period: w.label,
+      vitalityIndex: count >= threshold
+        ? Math.round((windowAgg._avg.score ?? 0) * 10) / 10
+        : null,
+      participationRate: count >= threshold && employeeCount > 0
+        ? Math.round((windowDistinct.length / employeeCount) * 100) / 100
+        : null,
+    })
+  }
+
+  // ── csrdMapping ───────────────────────────────────────────────────────────────
+  const csrdMapping: CsrdMappingEntry[] = [
+    {
+      standard: 'ESRS S1-8',
+      description: 'Mitarbeiterzufriedenheit',
+      elyoMetric: 'vitalityIndex',
+      value: `${vitalityIndex}/10`,
+    },
+    {
+      standard: 'ESRS S1-9',
+      description: 'Diversität & Inklusion',
+      elyoMetric: 'participationRate',
+      value: `${Math.round(participationRate * 100)}%`,
+    },
+    {
+      standard: 'ESRS S1-13',
+      description: 'Aus- und Weiterbildung',
+      elyoMetric: 'checkinsTotal',
+      value: `${checkinsTotal} Check-ins`,
+    },
+  ]
+
+  return {
+    company: { name: company.name, employeeCount, industry: company.industry },
+    period: { label, from, to },
+    kpis: {
+      vitalityIndex,
+      vitalityTrend,
+      activeParticipants,
+      participationRate,
+      avgEnergy: checkinsTotal > 0 ? Math.round((currentAgg._avg.energy ?? 0) * 10) / 10 : 0,
+      avgMood: checkinsTotal > 0 ? Math.round((currentAgg._avg.mood ?? 0) * 10) / 10 : 0,
+      avgStress: checkinsTotal > 0 ? Math.round((currentAgg._avg.stress ?? 0) * 10) / 10 : 0,
+      checkinsTotal,
+    },
+    teamBreakdown: [...aboveThresholdTeams, belowEntry],
+    trendData,
+    csrdMapping,
+  }
 }
