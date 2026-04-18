@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto'
+import { createHmac, timingSafeEqual } from 'crypto'
 import { encryptToken, decryptToken } from './crypto'
 import { awardPoints } from './points'
 import { prisma } from './prisma'
@@ -34,7 +34,9 @@ function parseState(state: string): string {
   const userId       = decoded.slice(0, dotIdx)
   const providedHmac = decoded.slice(dotIdx + 1)
   const expectedHmac = createHmac('sha256', getHmacSecret()).update(userId).digest('hex')
-  if (providedHmac !== expectedHmac) throw new Error('Invalid OAuth state signature')
+  const a = Buffer.from(providedHmac, 'hex')
+  const b = Buffer.from(expectedHmac, 'hex')
+  if (a.length !== b.length || !timingSafeEqual(a, b)) throw new Error('Invalid OAuth state signature')
   return userId
 }
 
@@ -71,7 +73,7 @@ export async function exchangeCode(code: string, state: string): Promise<void> {
   const expiresAt = new Date(Date.now() + data.expires_in * 1000)
   await prisma.wearableConnection.upsert({
     where:  { userId_source: { userId, source: 'google_health' } },
-    create: { userId, source: 'google_health', accessToken: encryptToken(data.access_token), refreshToken: encryptToken(data.refresh_token), expiresAt, isActive: true },
+    create: { userId, source: 'google_health', accessToken: encryptToken(data.access_token), refreshToken: data.refresh_token ? encryptToken(data.refresh_token) : null, expiresAt, isActive: true },
     update: { accessToken: encryptToken(data.access_token), refreshToken: data.refresh_token ? encryptToken(data.refresh_token) : undefined, expiresAt, isActive: true },
   })
 
@@ -92,7 +94,9 @@ export async function refreshAccessTokenIfNeeded(userId: string): Promise<void> 
     body:    new URLSearchParams({ refresh_token: decryptToken(conn.refreshToken), client_id: process.env.GOOGLE_CLIENT_ID!, client_secret: process.env.GOOGLE_CLIENT_SECRET!, grant_type: 'refresh_token' }),
   })
   if (!res.ok) {
-    await prisma.wearableConnection.update({ where: { userId_source: { userId, source: 'google_health' } }, data: { isActive: false } })
+    if (res.status === 401) {
+      await prisma.wearableConnection.update({ where: { userId_source: { userId, source: 'google_health' } }, data: { isActive: false } })
+    }
     throw new Error(`Token refresh failed: ${res.status}`)
   }
   const data = await res.json() as { access_token: string; expires_in: number }
