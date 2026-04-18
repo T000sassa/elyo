@@ -140,6 +140,11 @@ describe('getReportData', () => {
     expect(result.company.employeeCount).toBe(10)
   })
 
+  it('throws when company does not exist', async () => {
+    mockCompanyFindUnique.mockResolvedValue(null)
+    await expect(getReportData('nonexistent', { year: 2026 })).rejects.toThrow('nonexistent')
+  })
+
   it('returns correct period label and bounds for quarterly report', async () => {
     mockAggregate.mockResolvedValueOnce({
       _avg: { score: 7.0, mood: 7.5, stress: 3.0, energy: 8.0 },
@@ -295,7 +300,7 @@ describe('getReportData', () => {
     expect(result.trendData[11].period).toBe('Dec 2026')
   })
 
-  it('trendData: quarterly report produces 12 weekly points with ISO week labels', async () => {
+  it('trendData: quarterly report produces 12 weekly points with YYYY-Www labels', async () => {
     mockAggregate.mockResolvedValueOnce({ _avg: { score: 7.0, mood: 7.5, stress: 3.0, energy: 8.0 }, _count: { id: 8 } })
     mockGroupBy.mockResolvedValueOnce([{ userId: 'u1' }])
     mockAggregate.mockResolvedValueOnce({ _avg: { score: 6.5 }, _count: { id: 5 } })
