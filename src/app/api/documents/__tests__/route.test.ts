@@ -104,6 +104,13 @@ describe('GET /api/documents', () => {
     expect(res.status).toBe(401)
   })
 
+  it('returns 403 when role is not EMPLOYEE', async () => {
+    mockAuth.mockResolvedValue({ user: { id: 'admin-1', role: 'COMPANY_ADMIN' } })
+    const req = new Request('http://localhost/api/documents')
+    const res = await GET(req)
+    expect(res.status).toBe(403)
+  })
+
   it('returns documents for authenticated user', async () => {
     const docs = [{ id: 'doc-1', fileName: 'report.pdf', size: 1000, uploadedAt: new Date() }]
     mockPrismaFindMany.mockResolvedValue(docs)
