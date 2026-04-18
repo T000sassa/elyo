@@ -44,7 +44,17 @@ export function DocumentsTab({ documents }: Props) {
       const formData = new FormData()
       formData.append('file', file)
       const res = await fetch('/api/documents', { method: 'POST', body: formData })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        if (body?.error === 'file_too_large') {
+          setError('Datei ist zu groß. Maximal 10 MB.')
+        } else if (body?.error === 'invalid_file_type') {
+          setError('Nur PDFs sind erlaubt.')
+        } else {
+          setToast('Upload fehlgeschlagen.')
+        }
+        return
+      }
       router.refresh()
     } catch {
       setToast('Upload fehlgeschlagen.')
@@ -78,11 +88,12 @@ export function DocumentsTab({ documents }: Props) {
       )}
 
       {/* Dropzone */}
-      <div
-        className="rounded-xl border-2 border-dashed border-gray-300 p-6 text-center cursor-pointer hover:border-gray-400 transition-colors"
-        onClick={() => inputRef.current?.click()}
+      <label
+        htmlFor="doc-upload"
+        className="rounded-xl border-2 border-dashed border-gray-300 p-6 text-center cursor-pointer hover:border-gray-400 transition-colors block"
       >
         <input
+          id="doc-upload"
           ref={inputRef}
           type="file"
           accept="application/pdf"
@@ -95,7 +106,7 @@ export function DocumentsTab({ documents }: Props) {
         </p>
         <p className="text-xs text-gray-400 mt-1">Max. 10 MB</p>
         {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
-      </div>
+      </label>
 
       {/* Document List */}
       {documents.length === 0 ? (

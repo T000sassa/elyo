@@ -18,7 +18,7 @@ export function AvailableTab({ isGoogleConnected }: Props) {
         <div
           key={source.id}
           className="rounded-xl border border-gray-200 p-4 text-center space-y-2"
-          style={source.available ? {} : { opacity: 0.5 }}
+          style={source.available ? {} : { opacity: 0.5, pointerEvents: 'none' as const }}
         >
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center mx-auto text-sm font-bold"
