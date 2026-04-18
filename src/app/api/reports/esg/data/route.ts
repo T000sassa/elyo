@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     const data = await getReportData(session.user.companyId, { year, quarter })
     return NextResponse.json({ data })
   } catch (err) {
-    const detail = err instanceof Error ? err.message : 'Unknown error'
-    return NextResponse.json({ error: 'internal_error', detail }, { status: 500 })
+    console.error('[ESG report] getReportData failed:', err)
+    return NextResponse.json({ error: 'internal_error' }, { status: 500 })
   }
 }
