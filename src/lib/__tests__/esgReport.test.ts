@@ -202,6 +202,21 @@ describe('getReportData', () => {
     expect(result.kpis.checkinsTotal).toBe(0)
   })
 
+  it('vitalityTrend is 0 when prev period has no entries', async () => {
+    mockAggregate.mockResolvedValueOnce({
+      _avg: { score: 7.0, mood: 7.5, stress: 3.0, energy: 8.0 },
+      _count: { id: 8 },
+    })
+    mockGroupBy.mockResolvedValueOnce(Array.from({ length: 8 }, (_, i) => ({ userId: `u${i}` })))
+    // prev period: 0 entries
+    mockAggregate.mockResolvedValueOnce({ _avg: { score: null }, _count: { id: 0 } })
+
+    const result = await getReportData('company-1', { year: 2026, quarter: 1 })
+
+    expect(result.kpis.vitalityIndex).toBe(7.0)
+    expect(result.kpis.vitalityTrend).toBe(0)  // no baseline → no trend
+  })
+
   it('teamBreakdown: team above threshold appears individually', async () => {
     mockTeamFindMany.mockResolvedValue([
       { id: 'team-1', name: 'Engineering', companyId: 'company-1' },

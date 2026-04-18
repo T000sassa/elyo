@@ -186,8 +186,10 @@ export async function getReportData(
   })
   const prevVitality = prevAgg._count.id > 0
     ? Math.round((prevAgg._avg.score ?? 0) * 10) / 10
+    : null
+  const vitalityTrend = prevVitality !== null
+    ? Math.round((vitalityIndex - prevVitality) * 10) / 10
     : 0
-  const vitalityTrend = Math.round((vitalityIndex - prevVitality) * 10) / 10
 
   const participationRate = employeeCount > 0
     ? Math.round((activeParticipants / employeeCount) * 100) / 100
