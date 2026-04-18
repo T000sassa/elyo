@@ -1,6 +1,3 @@
-import { MIN_GROUP_SIZE } from './anonymize'
-import { prisma } from './prisma'
-
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface ReportData {
@@ -63,6 +60,9 @@ export function getPeriodBounds(period: { year: number; quarter?: number }): {
       label: String(period.year),
     }
   }
+  if (period.quarter < 1 || period.quarter > 4) {
+    throw new RangeError(`quarter must be 1–4, got ${period.quarter}`)
+  }
   const qStart = (period.quarter - 1) * 3
   return {
     from: new Date(period.year, qStart, 1, 0, 0, 0),
@@ -97,6 +97,8 @@ function buildTrendWindows(
       label: `${MONTHS[m]} ${period.year}`,
     }))
   }
+  // Quarterly: rolling 12 weeks (84 days) ending at the period's `to` date.
+  // The first few days of the quarter may not be covered — by design.
   return Array.from({ length: 12 }, (_, i) => {
     const weeksBack = 11 - i
     const windowTo = new Date(to)
@@ -105,6 +107,7 @@ function buildTrendWindows(
     const windowFrom = new Date(windowTo)
     windowFrom.setDate(windowFrom.getDate() - 6)
     windowFrom.setHours(0, 0, 0, 0)
+    // Simple ordinal week number (not ISO 8601) — consistent with anonymize.ts
     const year = windowFrom.getFullYear()
     const startOfYear = new Date(year, 0, 1)
     const week = Math.ceil(
