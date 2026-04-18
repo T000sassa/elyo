@@ -56,4 +56,9 @@ describe('encryptToken / decryptToken', () => {
     delete process.env.ENCRYPTION_KEY
     expect(() => encryptToken('test')).toThrow('ENCRYPTION_KEY')
   })
+
+  it('wirft wenn ENCRYPTION_KEY falsche Länge hat', () => {
+    process.env.ENCRYPTION_KEY = 'abcd' // zu kurz
+    expect(() => encryptToken('test')).toThrow('32 bytes')
+  })
 })

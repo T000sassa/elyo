@@ -350,8 +350,8 @@ model WearableConnection {
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   source       String   // "google_health" | "apple_health" | "oura" | "garmin" | "whoop" | "fitbit"
-  accessToken  String?  // AES-256-GCM encrypted via lib/crypto.ts
-  refreshToken String?  // AES-256-GCM encrypted via lib/crypto.ts
+  accessToken  String?  @db.Text // AES-256-GCM encrypted via lib/crypto.ts
+  refreshToken String?  @db.Text // AES-256-GCM encrypted via lib/crypto.ts
   expiresAt    DateTime?
   isActive     Boolean  @default(true)
   connectedAt  DateTime @default(now())

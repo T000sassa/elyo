@@ -3,7 +3,9 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'crypto'
 function getKey(): Buffer {
   const hex = process.env.ENCRYPTION_KEY
   if (!hex) throw new Error('ENCRYPTION_KEY environment variable is not set')
-  return Buffer.from(hex, 'hex')
+  const key = Buffer.from(hex, 'hex')
+  if (key.length !== 32) throw new Error('ENCRYPTION_KEY must be 64 hex characters (32 bytes)')
+  return key
 }
 
 export function encryptToken(plain: string): string {
@@ -15,8 +17,8 @@ export function encryptToken(plain: string): string {
   return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted.toString('hex')}`
 }
 
-export function decryptToken(cipher: string): string {
-  const parts = cipher.split(':')
+export function decryptToken(ciphertext: string): string {
+  const parts = ciphertext.split(':')
   if (parts.length !== 3) throw new Error('Invalid cipher format')
   const [ivHex, authTagHex, dataHex] = parts
   const key = getKey()
