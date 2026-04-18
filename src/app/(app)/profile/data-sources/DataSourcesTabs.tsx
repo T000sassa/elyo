@@ -29,7 +29,9 @@ interface Props {
 export function DataSourcesTabs({ connection, documents }: Props) {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const activeTab = (searchParams.get('tab') as Tab | null) ?? 'connected'
+  const VALID_TABS: Tab[] = ['connected', 'available', 'documents']
+  const raw = searchParams.get('tab')
+  const activeTab: Tab = (VALID_TABS.includes(raw as Tab) ? raw : 'connected') as Tab
 
   function setTab(tab: Tab) {
     const params = new URLSearchParams(searchParams.toString())

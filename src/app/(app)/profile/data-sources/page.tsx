@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -29,7 +30,9 @@ export default async function DataSourcesPage() {
       <p className="text-sm text-gray-400 mb-6">
         Alle Daten gehören dir. Dein Arbeitgeber sieht diese nicht.
       </p>
-      <DataSourcesTabs connection={connection} documents={documents} />
+      <Suspense fallback={<div className="h-40" />}>
+        <DataSourcesTabs connection={connection} documents={documents} />
+      </Suspense>
     </div>
   )
 }

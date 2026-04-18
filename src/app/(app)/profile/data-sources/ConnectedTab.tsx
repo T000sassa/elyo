@@ -18,8 +18,11 @@ export function ConnectedTab({ connection }: Props) {
   useEffect(() => {
     if (searchParams.get('error') === 'oauth_failed') {
       setToast('Verbindung fehlgeschlagen. Bitte erneut versuchen.')
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete('error')
+      router.replace(`?${params.toString()}`, { scroll: false })
     }
-  }, [searchParams])
+  }, [searchParams, router])
 
   async function handleSync() {
     setSyncing(true)
