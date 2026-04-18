@@ -88,4 +88,13 @@ describe('GET /api/reports/esg/data', () => {
     expect(res.status).toBe(200)
     expect(mockGetReportData).toHaveBeenCalledWith('company-1', { year: 2026, quarter: 1 })
   })
+
+  it('returns 500 when getReportData throws', async () => {
+    mockGetReportData.mockRejectedValue(new Error('Company company-1 not found'))
+    const req = new Request('http://localhost/api/reports/esg/data?year=2026')
+    const res = await GET(req)
+    expect(res.status).toBe(500)
+    const body = await res.json()
+    expect(body.error).toBe('internal_error')
+  })
 })
