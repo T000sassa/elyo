@@ -25,7 +25,7 @@ async function runCheckinReminder(baseUrl: string): Promise<ActionResult> {
 
   const employees = await prisma.user.findMany({
     where:  { role: 'EMPLOYEE', isActive: true },
-    select: { id: true, email: true, name: true },
+    select: { id: true, email: true, name: true, company: { select: { name: true } } },
   })
 
   const checkedInIds = new Set(
@@ -38,7 +38,7 @@ async function runCheckinReminder(baseUrl: string): Promise<ActionResult> {
   let sent = 0
   for (const emp of employees) {
     if (checkedInIds.has(emp.id)) continue
-    const ok = await sendCheckinReminder({ to: emp.email, name: emp.name ?? 'Mitarbeiter', checkinUrl: `${baseUrl}/checkin` })
+    const ok = await sendCheckinReminder({ to: emp.email, name: emp.name ?? 'Mitarbeiter', companyName: emp.company.name, checkinUrl: `${baseUrl}/checkin` })
     if (ok) sent++
   }
 
