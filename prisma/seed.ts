@@ -150,6 +150,35 @@ async function main() {
     console.log("✅ Demo survey created");
   }
 
+  // WearableSync mock data for first employee
+  const firstEmployee = allEmployees[0]
+  if (firstEmployee) {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const syncEntries = [
+      { daysAgo: 2, steps: 7840, sleepHours: 7.1, heartRate: 68.5 },
+      { daysAgo: 1, steps: 9210, sleepHours: 6.8, heartRate: 71.2 },
+      { daysAgo: 0, steps: 4120, sleepHours: null, heartRate: 65.0 },
+    ]
+    for (const entry of syncEntries) {
+      const date = new Date(today)
+      date.setDate(date.getDate() - entry.daysAgo)
+      await prisma.wearableSync.upsert({
+        where: { userId_source_date: { userId: firstEmployee.id, source: 'google_health', date } },
+        update: {},
+        create: {
+          userId: firstEmployee.id,
+          source: 'google_health',
+          date,
+          steps: entry.steps,
+          sleepHours: entry.sleepHours,
+          heartRate: entry.heartRate,
+        },
+      })
+    }
+    console.log('✅ 3 WearableSync entries created for first employee')
+  }
+
   console.log("\n🎉 Seed complete!\n");
   console.log("  Company Admin:    admin@demo.de / demo1234");
   console.log("  Team Manager:     manager.eng@demo.de / demo1234");
