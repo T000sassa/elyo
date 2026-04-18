@@ -87,6 +87,7 @@ model User {
   pointTransactions PointTransaction[]
   wearableConnections WearableConnection[]
   wearableSyncs       WearableSync[]
+  documents           UserDocument[]
   accounts          Account[]
   sessions         Session[]
 
@@ -376,4 +377,21 @@ model WearableSync {
   @@unique([userId, source, date])
   @@index([userId, date])
   @@map("wearable_syncs")
+}
+
+// ── UserDocument ──────────────────────────────────────────────────────────
+
+model UserDocument {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName   String
+  blobUrl    String
+  blobKey    String
+  mimeType   String
+  size       Int
+  uploadedAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("user_documents")
 }
