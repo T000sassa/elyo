@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ELYO – Offline</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #F7F6F2;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    }
+    .card {
+      background: white;
+      border-radius: 24px;
+      padding: 32px 24px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    }
+    .logo {
+      font-family: Georgia, serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: #1B4D3E;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 28px;
+    }
+    .field-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+    .slider-wrap { margin-bottom: 20px; }
+    input[type=range] {
+      width: 100%;
+      accent-color: #1B4D3E;
+      height: 4px;
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 16px;
+      border: none;
+      background: #1B4D3E;
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn:disabled { opacity: 0.5; cursor: default; }
+    .status {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #6b7280;
+      text-align: center;
+      min-height: 20px;
+    }
+    .status.saved { color: #059669; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <p class="logo">ELYO</p>
+    <p class="subtitle">Du bist gerade offline. Dein Check-in wird gespeichert, sobald du wieder online bist.</p>
+
+    <form id="checkin-form">
+      <div class="slider-wrap">
+        <div class="field-label">
+          <span>Energie</span>
+          <span id="energy-val">7</span>
+        </div>
+        <input type="range" id="energy" min="1" max="10" value="7"
+          oninput="document.getElementById('energy-val').textContent = this.value" />
+      </div>
+      <div class="slider-wrap">
+        <div class="field-label">
+          <span>Stimmung</span>
+          <span id="mood-val">7</span>
+        </div>
+        <input type="range" id="mood" min="1" max="10" value="7"
+          oninput="document.getElementById('mood-val').textContent = this.value" />
+      </div>
+      <div class="slider-wrap">
+        <div class="field-label">
+          <span>Belastung</span>
+          <span id="stress-val">3</span>
+        </div>
+        <input type="range" id="stress" min="1" max="10" value="3"
+          oninput="document.getElementById('stress-val').textContent = this.value" />
+      </div>
+      <button type="submit" class="btn" id="save-btn">Check-in speichern</button>
+    </form>
+    <p class="status" id="status"></p>
+  </div>
+
+  <script>
+    const DB_NAME = 'elyo-offline'
+    const DB_VERSION = 1
+    const STORE_NAME = 'checkins'
+    const SYNC_TAG = 'checkin-sync'
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION)
+        req.onupgradeneeded = (e) => {
+          e.target.result.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true })
+        }
+        req.onsuccess = (e) => resolve(e.target.result)
+        req.onerror = (e) => reject(e.target.error)
+      })
+    }
+
+    function saveCheckin(db, data) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite')
+        const req = tx.objectStore(STORE_NAME).add({ data, savedAt: new Date().toISOString() })
+        req.onsuccess = () => resolve()
+        req.onerror = (e) => reject(e.target.error)
+      })
+    }
+
+    document.getElementById('checkin-form').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const btn = document.getElementById('save-btn')
+      const status = document.getElementById('status')
+      btn.disabled = true
+
+      const data = {
+        energy: parseInt(document.getElementById('energy').value),
+        mood: parseInt(document.getElementById('mood').value),
+        stress: parseInt(document.getElementById('stress').value),
+      }
+
+      try {
+        const db = await openDB()
+        await saveCheckin(db, data)
+
+        if ('serviceWorker' in navigator && 'SyncManager' in window) {
+          const reg = await navigator.serviceWorker.ready
+          await reg.sync.register(SYNC_TAG)
+        }
+
+        status.textContent = '✓ Gespeichert – wird gesendet, sobald du online bist.'
+        status.className = 'status saved'
+        btn.textContent = 'Gespeichert ✓'
+      } catch (err) {
+        status.textContent = 'Fehler beim Speichern. Bitte versuche es erneut.'
+        btn.disabled = false
+      }
+    })
+  </script>
+</body>
+</html>
