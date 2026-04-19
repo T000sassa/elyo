@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { sendCheckinReminder, sendWeeklyDigest } from '@/lib/email'
 import { getAggregatedMetrics, getContinuityData } from '@/lib/anonymize'
 import { fetchSteps, fetchSleepSessions, fetchHeartRateAvg } from '@/lib/googleHealth'
+import { generateSuggestionsForAllCompanies } from '@/lib/measureEngine'
 
 type ActionResult = { success: boolean; duration: number; affected: number; error?: string }
 
@@ -100,6 +101,13 @@ async function runWearableSync(): Promise<ActionResult> {
   return { success: true, duration: Math.round(performance.now() - start), affected }
 }
 
+async function runMeasureEngine(): Promise<ActionResult> {
+  const start = performance.now()
+  const results = await generateSuggestionsForAllCompanies()
+  const affected = results.reduce((sum, r) => sum + r.created, 0)
+  return { success: true, duration: Math.round(performance.now() - start), affected }
+}
+
 export async function POST(req: NextRequest) {
   if (!verifyCronSecret(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -118,6 +126,8 @@ export async function POST(req: NextRequest) {
       results['weekly-digest'] = await runWeeklyDigest(baseUrl)
     } else if (action === 'wearable-sync') {
       results['wearable-sync'] = await runWearableSync()
+    } else if (action === 'measure-engine') {
+      results['measure-engine'] = await runMeasureEngine()
     } else {
       return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 })
     }
