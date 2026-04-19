@@ -200,3 +200,74 @@ export async function sendInviteEmail(opts: {
     baseTemplate(content),
   )
 }
+
+// ── Partner-Lifecycle-E-Mails ─────────────────────────────────────────────────
+
+const APP_URL = process.env.NEXTAUTH_URL ?? 'https://elyo.app'
+
+export async function sendPartnerApprovedEmail(partner: { email: string; name: string }): Promise<void> {
+  const content = `
+    <h1 style="font-size:22px;color:#0a1f1c;margin:0 0 12px;">Willkommen bei ELYO, ${partner.name}.</h1>
+    <p style="color:#374151;line-height:1.6;">
+      Dein Partner-Profil wurde freigeschaltet. Ab sofort sehen ELYO-Mitarbeiter dein Angebot im Partner-Netzwerk.
+    </p>
+    <p style="margin:24px 0;">
+      <a href="${APP_URL}/partner/dashboard" style="background:#14b8a6;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+        Zum Dashboard
+      </a>
+    </p>
+  `
+  const html = baseTemplate(content)
+  const transport = getTransport()
+  if (!transport) {
+    console.log('[email:partner_approved:dev]', partner.email)
+    return
+  }
+  await transport.sendMail({ from: FROM, to: partner.email, subject: 'ELYO: Dein Partner-Profil ist freigeschaltet', html })
+}
+
+export async function sendPartnerRejectedEmail(
+  partner: { email: string; name: string },
+  reason: string,
+): Promise<void> {
+  const content = `
+    <h1 style="font-size:22px;color:#0a1f1c;margin:0 0 12px;">Registrierung konnte nicht freigeschaltet werden</h1>
+    <p style="color:#374151;line-height:1.6;">Hallo ${partner.name},</p>
+    <p style="color:#374151;line-height:1.6;">
+      wir haben deine Partner-Registrierung geprüft und sie konnte nicht freigeschaltet werden.
+    </p>
+    <p style="color:#374151;line-height:1.6;"><strong>Begründung:</strong> ${reason}</p>
+    <p style="color:#374151;line-height:1.6;">
+      Du kannst deine Angaben korrigieren und erneut einen Nachweis einreichen.
+    </p>
+    <p style="margin:24px 0;">
+      <a href="${APP_URL}/partner/login" style="background:#14b8a6;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+        Zum Login
+      </a>
+    </p>
+  `
+  const html = baseTemplate(content)
+  const transport = getTransport()
+  if (!transport) {
+    console.log('[email:partner_rejected:dev]', partner.email, reason)
+    return
+  }
+  await transport.sendMail({ from: FROM, to: partner.email, subject: 'ELYO: Registrierung konnte nicht freigeschaltet werden', html })
+}
+
+export async function sendPartnerSuspendedEmail(partner: { email: string; name: string }): Promise<void> {
+  const content = `
+    <h1 style="font-size:22px;color:#0a1f1c;margin:0 0 12px;">Partner-Profil vorübergehend ausgeblendet</h1>
+    <p style="color:#374151;line-height:1.6;">Hallo ${partner.name},</p>
+    <p style="color:#374151;line-height:1.6;">
+      dein Partner-Profil wurde vorübergehend ausgeblendet. Bei Fragen wende dich bitte an den Support.
+    </p>
+  `
+  const html = baseTemplate(content)
+  const transport = getTransport()
+  if (!transport) {
+    console.log('[email:partner_suspended:dev]', partner.email)
+    return
+  }
+  await transport.sendMail({ from: FROM, to: partner.email, subject: 'ELYO: Partner-Profil ausgeblendet', html })
+}

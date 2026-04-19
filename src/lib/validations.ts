@@ -61,3 +61,30 @@ export const AnamnesisSchema = z.object({
   chronicPatterns: z.array(z.string().max(50)).max(10).optional(),
   hasMedication:  z.boolean().optional(),
 });
+
+export const PartnerRegisterSchema = z.object({
+  email:        z.string().email('Ungültige E-Mail-Adresse'),
+  password:     z.string().min(8, 'Mindestens 8 Zeichen'),
+  name:         z.string().min(2, 'Mindestens 2 Zeichen').max(120),
+  type:         z.enum(['LOCAL', 'EXPERT', 'DIGITAL']),
+  categories:   z.array(z.string().min(1)).min(1, 'Mindestens eine Kategorie').max(6),
+  description:  z.string().min(40, 'Mindestens 40 Zeichen').max(2000),
+  address:      z.string().max(200).optional(),
+  city:         z.string().max(100).optional(),
+  website:      z.string().url().optional().or(z.literal('')),
+  phone:        z.string().max(40).optional(),
+  minimumLevel: z.enum(['STARTER', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM']).default('STARTER'),
+});
+
+export const PartnerLoginSchema = z.object({
+  email:    z.string().email('Ungültige E-Mail-Adresse'),
+  password: z.string().min(1),
+});
+
+export const AdminPartnerActionSchema = z.object({
+  action:          z.enum(['approve', 'reject', 'suspend', 'unsuspend']),
+  rejectionReason: z.string().min(5).max(500).optional(),
+}).refine(
+  (data) => data.action !== 'reject' || (data.rejectionReason && data.rejectionReason.length >= 5),
+  { message: 'rejectionReason required for reject', path: ['rejectionReason'] },
+);
