@@ -54,6 +54,7 @@ model Company {
   teams        Team[]
   surveys      Survey[]
   inviteTokens InviteToken[]
+  measures     Measure[]
 
   @@map("companies")
 }
@@ -394,4 +395,24 @@ model UserDocument {
 
   @@index([userId])
   @@map("user_documents")
+}
+
+// ── Measure ───────────────────────────────────────────────────────────
+
+model Measure {
+  id          String    @id @default(cuid())
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  teamId      String?
+  title       String
+  category    String
+  description String
+  status      String    @default("SUGGESTED")
+  suggestedAt DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdBy   String
+
+  @@index([companyId, status])
+  @@map("measures")
 }
