@@ -23,6 +23,17 @@ function getTransport() {
 
 const FROM = process.env.SMTP_FROM ?? "ELYO Wellbeing <no-reply@elyo.app>";
 
+// ── HTML escaping ─────────────────────────────────────────────────────────────
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 // ── Templates ─────────────────────────────────────────────────────────────────
 
 function baseTemplate(content: string): string {
@@ -207,7 +218,7 @@ const APP_URL = process.env.NEXTAUTH_URL ?? 'https://elyo.app'
 
 export async function sendPartnerApprovedEmail(partner: { email: string; name: string }): Promise<void> {
   const content = `
-    <h1 style="font-size:22px;color:#0a1f1c;margin:0 0 12px;">Willkommen bei ELYO, ${partner.name}.</h1>
+    <h1 style="font-size:22px;color:#0a1f1c;margin:0 0 12px;">Willkommen bei ELYO, ${escapeHtml(partner.name)}.</h1>
     <p style="color:#374151;line-height:1.6;">
       Dein Partner-Profil wurde freigeschaltet. Ab sofort sehen ELYO-Mitarbeiter dein Angebot im Partner-Netzwerk.
     </p>
@@ -232,11 +243,11 @@ export async function sendPartnerRejectedEmail(
 ): Promise<void> {
   const content = `
     <h1 style="font-size:22px;color:#0a1f1c;margin:0 0 12px;">Registrierung konnte nicht freigeschaltet werden</h1>
-    <p style="color:#374151;line-height:1.6;">Hallo ${partner.name},</p>
+    <p style="color:#374151;line-height:1.6;">Hallo ${escapeHtml(partner.name)},</p>
     <p style="color:#374151;line-height:1.6;">
       wir haben deine Partner-Registrierung geprüft und sie konnte nicht freigeschaltet werden.
     </p>
-    <p style="color:#374151;line-height:1.6;"><strong>Begründung:</strong> ${reason}</p>
+    <p style="color:#374151;line-height:1.6;"><strong>Begründung:</strong> ${escapeHtml(reason)}</p>
     <p style="color:#374151;line-height:1.6;">
       Du kannst deine Angaben korrigieren und erneut einen Nachweis einreichen.
     </p>
@@ -258,7 +269,7 @@ export async function sendPartnerRejectedEmail(
 export async function sendPartnerSuspendedEmail(partner: { email: string; name: string }): Promise<void> {
   const content = `
     <h1 style="font-size:22px;color:#0a1f1c;margin:0 0 12px;">Partner-Profil vorübergehend ausgeblendet</h1>
-    <p style="color:#374151;line-height:1.6;">Hallo ${partner.name},</p>
+    <p style="color:#374151;line-height:1.6;">Hallo ${escapeHtml(partner.name)},</p>
     <p style="color:#374151;line-height:1.6;">
       dein Partner-Profil wurde vorübergehend ausgeblendet. Bei Fragen wende dich bitte an den Support.
     </p>
