@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { Fraunces, DM_Sans } from "next/font/google"
 import "./globals.css"
+import "./elyo.css"
 import { Providers } from "@/components/shared/Providers"
 import { ServiceWorkerRegistration } from "@/components/shared/ServiceWorkerRegistration"
 import { InstallBanner } from "@/components/ui/InstallBanner"
