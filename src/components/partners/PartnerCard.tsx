@@ -6,7 +6,7 @@ export interface Partner {
   name: string
   type: string
   distance: string | 'digital'
-  rating: number
+  rating?: number
   verified: boolean
   minLevel: Level | 'all'
   currentLevel: Level
@@ -71,10 +71,12 @@ export function PartnerCard({ partner, onClick }: { partner: Partner; onClick?: 
         </div>
 
         <div className="flex items-center gap-2 mt-2">
-          <div className="flex items-center gap-1">
-            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-            <span className="text-xs font-semibold text-gray-700">{partner.rating}</span>
-          </div>
+          {partner.rating !== undefined && (
+            <div className="flex items-center gap-1">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+              <span className="text-xs font-semibold text-gray-700">{partner.rating}</span>
+            </div>
+          )}
           {partner.verified && !partner.pending && (
             <span
               className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
