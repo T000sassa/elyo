@@ -1,0 +1,17 @@
+{
+  "name": "ELYO",
+  "short_name": "ELYO",
+  "description": "Dein persönlicher Vitalitätsbegleiter",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#F7F6F2",
+  "theme_color": "#1B4D3E",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
