@@ -91,6 +91,8 @@ model User {
   documents           UserDocument[]
   accounts          Account[]
   sessions         Session[]
+  pushSubscriptions      PushSubscription[]
+  notificationPreference NotificationPreference?
 
   @@index([companyId])
   @@index([teamId])
@@ -417,4 +419,29 @@ model Measure {
 
   @@index([companyId, status])
   @@map("measures")
+}
+
+// ── PushSubscription ──────────────────────────────────────────────────────────
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ── NotificationPreference ────────────────────────────────────────────────────
+
+model NotificationPreference {
+  userId              String  @id
+  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkinReminder     Boolean @default(true)
+  checkinReminderTime String  @default("09:00")
+  weeklySummary       Boolean @default(true)
+  partnerUpdates      Boolean @default(false)
 }
