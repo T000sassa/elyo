@@ -10,8 +10,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['DM Sans', 'system-ui', 'sans-serif'],
-        display: ['Fraunces', 'Georgia', 'serif'],
+        sans:    ['var(--font-body)', 'DM Sans', 'system-ui', 'sans-serif'],
+        body:    ['var(--font-body)', 'DM Sans', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'Fraunces', 'Georgia', 'serif'],
       },
       boxShadow: {
         card: '0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.04)',
@@ -69,6 +70,30 @@ const config: Config = {
           700: '#b45309',
           800: '#92400e',
           900: '#78350f',
+        },
+        'elyo-green': {
+          50:  '#EEF3F1',
+          100: '#D6E3DD',
+          200: '#9FBEB1',
+          300: '#5C8574',
+          500: '#1B4D3E',
+          700: '#0F3329',
+          900: '#07201A',
+        },
+        'elyo-amber': {
+          50:  '#FBF3E5',
+          100: '#F4DFB4',
+          300: '#E0B565',
+          500: '#C8913A',
+          700: '#9A6A22',
+        },
+        'elyo-bg':      '#F7F6F2',
+        'elyo-surface': '#FFFFFF',
+        'elyo-line':    '#E6E2D6',
+        'elyo-ink': {
+          DEFAULT: '#1A1C1A',
+          soft:    '#55584F',
+          mute:    '#8E8F86',
         },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
