@@ -65,6 +65,7 @@ describe('sendPushToUser', () => {
   it('deletes expired subscription on 410 Gone error', async () => {
     const { WebPushError } = await import('web-push')
     mockPrisma.pushSubscription.findMany.mockResolvedValue([mockSubscription])
+    // @ts-expect-error mock class only needs 2 args at runtime
     mockSendNotification.mockRejectedValue(new WebPushError('Gone', 410))
     const result = await sendPushToUser('user-1', { title: 'Test', body: 'Body' })
     expect(result.failed).toBe(1)
