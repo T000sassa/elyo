@@ -1,0 +1,17 @@
+{
+  "type": "daily",
+  "user": {
+    "user_id": "terra-user-abc-123",
+    "provider": "OURA"
+  },
+  "data": [
+    {
+      "metadata": { "start_time": "2026-04-18T00:00:00Z", "end_time": "2026-04-18T23:59:59Z" },
+      "scores": {
+        "recovery": 82,
+        "readiness": 78
+      },
+      "heart_rate_data": { "summary": { "avg_hrv_rmssd": 46.2 } }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "type": "sleep",
+  "user": {
+    "user_id": "terra-user-abc-123",
+    "provider": "OURA"
+  },
+  "data": [
+    {
+      "metadata": { "start_time": "2026-04-18T22:00:00Z", "end_time": "2026-04-19T06:30:00Z" },
+      "sleep_durations_data": {
+        "asleep": { "duration_asleep_state_seconds": 25200 }
+      }
+    }
+  ]
+}

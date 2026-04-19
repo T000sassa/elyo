@@ -1,0 +1,7 @@
+{
+  "type": "deauth",
+  "user": {
+    "user_id": "terra-user-abc-123",
+    "provider": "OURA"
+  }
+}

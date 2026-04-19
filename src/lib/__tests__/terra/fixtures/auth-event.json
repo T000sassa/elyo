@@ -1,0 +1,9 @@
+{
+  "type": "auth",
+  "status": "success",
+  "user": {
+    "user_id": "terra-user-abc-123",
+    "provider": "OURA",
+    "reference_id": "user-cuid-xyz"
+  }
+}

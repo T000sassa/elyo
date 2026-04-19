@@ -1,0 +1,14 @@
+{
+  "type": "activity",
+  "user": {
+    "user_id": "terra-user-abc-123",
+    "provider": "GARMIN"
+  },
+  "data": [
+    {
+      "metadata": { "start_time": "2026-04-18T00:00:00Z", "end_time": "2026-04-18T23:59:59Z" },
+      "distance_data": { "steps": 9420 },
+      "heart_rate_data": { "summary": { "avg_hr_bpm": 68.5 } }
+    }
+  ]
+}
