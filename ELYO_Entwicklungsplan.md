@@ -794,91 +794,422 @@ Billing ist ausschließlich im Company-Admin-Bereich.
 # PHASE 2: PARTNER-ÖKOSYSTEM & WEARABLES
 ## „Retention durch echten Mehrwert"
 
+Aufgeteilt in 8 fokussierte Pakete – jedes deutlich unter 32k Token bei der Ausführung.
+
 ---
 
-### PROMPT 2.1 – Apple Health & Google Health Integration
+### PROMPT 2.1 – WearableSync Datenmodell & Prisma Migration
 
 ```
-Implementiere Wearable-Daten-Integration via Apple HealthKit und Google Health Connect für die ELYO Mobile App.
+Erstelle ausschließlich das Datenbankmodell und die Prisma-Migration für Wearable-Daten in ELYO.
+Noch keine API, noch keine UI – nur Schema + Migration + Seed-Daten.
 
-STRATEGIE: Erst native Gratis-Integration (Apple/Google), dann Terra/Rook für Premium-Wearables (Phase 3).
+PRISMA-MIGRATION (neue Datei: prisma/migrations/…/migration.sql):
 
-MOBILE: Wenn ELYO als Progressive Web App (PWA) oder React Native:
-
-FÜR PWA (Phase 2a – empfohlen für Speed):
-- Apple Health: Nicht direkt via Web verfügbar → Umweg via Shortcuts/Automations
-- Google Fit: Web-API verfügbar → OAuth + Fitness REST API
-- Empfehlung: Google Health als erste Integration, Apple via nativer App (Phase 3)
-
-IMPLEMENTATION GOOGLE HEALTH (Web):
-1. src/lib/googleHealth.ts:
-   - OAuth-Flow: Google Fit Scopes (activity.read, sleep.read, heart_rate.read)
-   - fetchSteps(userId, dateRange)
-   - fetchHeartRate(userId, dateRange) → für HRV-Näherung
-   - fetchSleepSessions(userId, dateRange)
-
-2. DATENMODELL:
 model WearableSync {
   id         String   @id @default(cuid())
   userId     String
-  source     String   // "google_health" | "apple_health" | "oura" | "garmin" | "whoop"
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source     String   // "google_health" | "apple_health" | "oura" | "garmin" | "whoop" | "fitbit"
   date       DateTime
   steps      Int?
-  heartRate  Float?   // Durchschnitt – KEIN medizinischer Wert, nur "Aktivitätsindikator"
+  heartRate  Float?   // Bezeichnung intern OK, in UI NIEMALS so anzeigen
   sleepHours Float?
   syncedAt   DateTime @default(now())
+
+  @@unique([userId, source, date])
+  @@index([userId, date])
 }
 
-3. WORDING IN DER UI:
-   NIEMALS: "HRV", "Ruhepuls", "Gesundheitsdaten"
-   IMMER: "Aktivitätsdaten", "Bewegungsmuster", "Erholungsindikator"
+model WearableConnection {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source      String
+  accessToken String?  // verschlüsselt speichern via lib/crypto.ts
+  refreshToken String?
+  expiresAt   DateTime?
+  isActive    Boolean  @default(true)
+  connectedAt DateTime @default(now())
 
-4. NUTZER-UI:
-   src/app/(app)/profile/data-sources/page.tsx
-   - Liste aller verfügbaren Quellen
-   - Verbinden/Trennen per Toggle
-   - Status: "Zuletzt synchronisiert: vor 2 Stunden"
-   - Datenschutz-Box: "Nur du siehst diese Daten. Dein Arbeitgeber hat keinen Zugriff."
-   - Jede Verbindung ist optional und jederzeit trennbar
+  @@unique([userId, source])
+}
 
-5. PUNKTE-INTEGRATION:
-   Wearable verbunden → einmalig +10 Punkte
-   Tägliche Sync-Daten vorhanden → +1 Punkt/Tag (automatisch)
+ZUSÄTZLICH:
+- User-Model um `wearableConnections WearableConnection[]` und
+  `wearableSyncs WearableSync[]` ergänzen
+- src/lib/crypto.ts erstellen: encryptToken(plain) / decryptToken(cipher)
+  via Node.js crypto, AES-256-GCM, Key aus ENCRYPTION_KEY env-var
+- prisma/seed.ts: 3 Mock-WearableSync-Einträge für Test-User anlegen
+- Unit-Tests für crypto.ts (encryptToken + decryptToken round-trip)
+
+KEINE API-Routes, KEINE UI in diesem Schritt.
 ```
 
 ---
 
-### PROMPT 2.2 – ESG Report PDF Export
+### PROMPT 2.2 – Google Health OAuth Integration (Backend only)
 
 ```
-Upgrade den bestehenden ESG CSV-Export zu einem vollständigen PDF-Report für CSRD-Anforderungen.
+Implementiere ausschließlich den Backend-Service für Google Fitness API in ELYO.
+Kein UI, kein Frontend – nur lib + API-Routes.
 
-REPORT-INHALT:
-- Deckblatt: Unternehmensname, Berichtszeitraum, ELYO-Logo
-- Executive Summary: Kern-KPIs auf einen Blick
-- Vitalitäts-Index Verlauf (Grafik)
-- Partizipationsrate nach Abteilung/Team
-- Maßnahmen-Übersicht: Was wurde implementiert
-- Benchmark: Branchenvergleich (anonymisiert)
-- CSRD Social Pillar Mapping: Welche ELYO-Kennzahlen welchem Standard entsprechen
-- Disclaimer: Methodik und Datenschutz
+VORAUSSETZUNG: WearableConnection-Model aus Prompt 2.1 existiert.
 
-TECHNISCHES:
-- Library: @react-pdf/renderer (React-basiertes PDF)
-- Oder: Puppeteer (HTML → PDF, höhere Designfreiheit)
-- Empfehlung: Puppeteer via API Route für ELYO-Branding-Qualität
+DATEIEN:
 
-API:
-- GET /api/reports/esg/pdf?period=2024-Q1 → PDF-Download
-- Authentifizierung: nur COMPANY_ADMIN
-- Generierung: on-demand, kein Caching nötig in Phase 2
+1. src/lib/googleHealth.ts:
+   Funktionen:
+   - getAuthUrl(userId) → OAuth-Consent-URL mit State-Parameter
+   - exchangeCode(code, state) → Tokens holen + verschlüsselt in WearableConnection speichern
+   - refreshAccessToken(userId) → Token erneuern wenn abgelaufen
+   - fetchSteps(userId, dateRange: {from: Date, to: Date}) → WearableSync-Einträge upserten
+   - fetchSleepSessions(userId, dateRange) → WearableSync-Einträge upserten
+   - fetchHeartRateAvg(userId, dateRange) → WearableSync-Einträge upserten
+   - disconnectUser(userId) → WearableConnection deaktivieren + Tokens löschen
 
-DESIGN:
-- ELYO-Branding konsequent (Farben, Fonts)
-- Professionell wie McKinsey-Report, nicht wie generiertes Dokument
-- Seite 1: Visuell stark (Grafiken, KPIs groß)
-- Seite 2+: Daten-Tabellen, sauber strukturiert
-- Footer: "Erstellt mit ELYO – Alle Daten anonymisiert und DSGVO-konform"
+   Google Fitness REST API Endpoints:
+   - POST https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate
+   - Scopes: https://www.googleapis.com/auth/fitness.activity.read
+             https://www.googleapis.com/auth/fitness.sleep.read
+             https://www.googleapis.com/auth/fitness.heart_rate.read
+
+2. API-Routes:
+   - GET  /api/wearables/google/connect    → redirect zu Google OAuth
+   - GET  /api/wearables/google/callback   → Code exchange, Token speichern, redirect zu /profile/data-sources
+   - POST /api/wearables/google/sync       → manueller Sync-Trigger (letzte 7 Tage)
+   - DELETE /api/wearables/google/disconnect → Verbindung trennen + Daten löschen
+
+3. Cron-Job-Erweiterung (bestehende cron.ts):
+   - Täglich 6 Uhr: Alle aktiven Google-Verbindungen durchgehen → fetchSteps/Sleep/HeartRate
+   - Bei Token-Fehler: WearableConnection.isActive = false, E-Mail an Nutzer
+
+4. Unit-Tests für getAuthUrl() und exchangeCode() (vi.mock für fetch)
+
+WORDING-REGEL: Keine Kommentare oder Log-Messages mit "health data" oder "medical".
+Stattdessen: "activity data", "movement pattern", "sync data".
+```
+
+---
+
+### PROMPT 2.3 – Datenquellen UI (Mitarbeiter-Profil)
+
+```
+Erstelle die UI-Seite für Datenquellen-Verwaltung im ELYO Mitarbeiter-Profil.
+Reines Frontend – nutzt die API-Routes aus Prompt 2.2.
+
+DATEI: src/app/(app)/profile/data-sources/page.tsx
+
+SEITENAUFBAU:
+
+1. HEADER:
+   "Deine Datenquellen"
+   Subtext: "Verbinde Apps und Geräte, um deinen Vitalitäts-Score anzureichern.
+   Alle Daten gehören dir. Dein Arbeitgeber sieht diese Informationen nicht."
+
+2. VERBUNDENE QUELLEN (falls vorhanden):
+   Für jede aktive WearableConnection eine Karte:
+   - Logo + Name der Quelle
+   - Status: "Verbunden · Zuletzt synchronisiert: vor 3 Stunden"
+   - Letzte Sync-Daten: "Heute: 8.420 Schritte · 7.2h Schlaf"
+   - Button: "Trennen" (mit Bestätigungs-Dialog)
+   - Button: "Jetzt synchronisieren" (triggert /api/wearables/[source]/sync)
+
+3. VERFÜGBARE QUELLEN (nicht verbunden):
+   Grid mit Source-Cards:
+   - Google Fit     → "Verbinden" → /api/wearables/google/connect
+   - Apple Health   → "Bald verfügbar" (disabled, Phase 3)
+   - Oura Ring      → "Bald verfügbar" (disabled, Phase 3)
+   - Garmin         → "Bald verfügbar" (disabled, Phase 3)
+   - Whoop          → "Bald verfügbar" (disabled, Phase 3)
+
+4. DOKUMENTE-SEKTION (Blutwerte etc.):
+   "Dokumente hinterlegen"
+   Subtext: "Lade Befunde hoch – nur für dich sichtbar, sicher gespeichert."
+   - Upload-Button (PDF, max. 10MB)
+   - Liste hochgeladener Dokumente (Name, Datum, Löschen-Button)
+   - API: POST /api/documents (Vercel Blob oder S3)
+   - KEIN Parsing, KEINE Anzeige des Inhalts – nur Dateiliste
+
+5. PUNKTE-HINWEIS:
+   Banner: "⭐ Verbinde eine Quelle → +10 Punkte · Tägliche Synchronisation → +1 Punkt/Tag"
+
+NACH VERBINDUNG:
+- Sofort Punkte via /api/points/award auslösen (falls noch nicht vergeben)
+- Toast-Notification: "Google Fit verbunden! +10 Punkte gutgeschrieben 🎉"
+```
+
+---
+
+### PROMPT 2.4 – ESG PDF: Daten-Aggregation (Backend)
+
+```
+Implementiere den Daten-Aggregations-Service für den ESG PDF-Report in ELYO.
+Nur Backend-Logik – kein PDF-Rendering in diesem Schritt.
+
+DATEI: src/lib/esgReport.ts
+
+FUNKTIONEN:
+
+1. getReportData(companyId: string, period: { year: number, quarter?: number })
+   Gibt zurück:
+   {
+     company: { name, employeeCount, industry },
+     period: { label, from, to },
+     kpis: {
+       vitalityIndex: number,           // Durchschnitt aller WellbeingEntries
+       vitalityTrend: number,           // Delta vs. Vorperiode
+       activeParticipants: number,      // Unique User mit mind. 1 Check-in
+       participationRate: number,       // activeParticipants / totalEmployees
+       avgEnergy: number,
+       avgMood: number,
+       avgStress: number,               // invertiert für "Belastung"
+       checkinsTotal: number,
+     },
+     teamBreakdown: Array<{
+       teamName: string,
+       participationRate: number,
+       vitalityIndex: number,
+       memberCount: number,
+     }>,
+     trendData: Array<{                 // letzte 12 Monate/Quartale
+       period: string,
+       vitalityIndex: number,
+       participationRate: number,
+     }>,
+     csrdMapping: Array<{
+       standard: string,               // z.B. "ESRS S1-8"
+       description: string,
+       elyoMetric: string,
+       value: string,
+     }>,
+   }
+
+2. getIndustryBenchmark(industry: string)
+   → Mock-Daten Phase 2, echte Aggregation Phase 3
+   Gibt { avgVitalityIndex, avgParticipationRate } zurück
+
+ANONYMISIERUNGS-REGEL:
+- Kein Team mit weniger als Company.anonymityThreshold Einträgen in teamBreakdown
+- Diese Teams → zusammengefasst als "Weitere Teams (n<Schwellwert)"
+
+API-ROUTE:
+- GET /api/reports/esg/data?year=2024&quarter=1
+- Auth: nur COMPANY_ADMIN
+- Response: JSON (wird von PDF-Renderer und auch direkt genutzt)
+
+Unit-Tests: getReportData() mit Mock-Prisma-Daten, Anonymisierungs-Logik testen.
+```
+
+---
+
+### PROMPT 2.5 – ESG PDF: Rendering & Download
+
+```
+Implementiere das PDF-Rendering für den ELYO ESG-Report.
+Nutzt die Daten aus getReportData() (Prompt 2.4).
+
+TECHNOLOGIE: @react-pdf/renderer (kein Puppeteer – zu schwer für Vercel Edge)
+
+DATEIEN:
+
+1. src/components/reports/EsgReportPdf.tsx:
+   React-PDF-Dokument mit diesen Seiten:
+
+   SEITE 1 – Deckblatt:
+   - ELYO-Logo (SVG inline)
+   - Titel: "Vitalitätsbericht [Quartal/Jahr]"
+   - Unternehmensname groß
+   - Erstellungsdatum
+   - Hintergrund: ELYO-Grün mit weißer Schrift
+
+   SEITE 2 – Executive Summary:
+   - 4 KPI-Boxen: Vitalitäts-Index, Partizipationsrate, Ø Energie, Ø Belastung
+   - Je KPI: Wert groß + Trend-Pfeil + Delta vs. Vorperiode
+   - Kurzer Fließtext-Kommentar (generiert aus Schwellwert-Logik, KEIN KI-Call)
+
+   SEITE 3 – Trend & Teams:
+   - Trendtabelle: 12 Perioden, Vitalitäts-Index + Partizipationsrate
+   - Team-Tabelle: Name, Mitglieder, Partizipation, Index
+   - Anonymisierungshinweis wenn Teams ausgeblendet
+
+   SEITE 4 – CSRD Mapping:
+   - Tabelle: ESRS-Standard | Beschreibung | ELYO-Kennzahl | Wert
+   - Grau-hinterlegte Header-Zeilen
+   - Footer mit Methodik-Hinweis
+
+   JEDE SEITE Footer:
+   "Erstellt mit ELYO · Alle Daten anonymisiert und DSGVO-konform · elyo.de"
+
+2. API-ROUTE: GET /api/reports/esg/pdf?year=2024&quarter=1
+   - Ruft getReportData() auf
+   - Rendert EsgReportPdf via renderToBuffer()
+   - Response: Content-Type: application/pdf, Content-Disposition: attachment
+
+3. COMPANY REPORTS-SEITE:
+   Download-Button neben bestehendem CSV-Export:
+   "📄 PDF herunterladen" → GET /api/reports/esg/pdf
+   Loading-State während Generierung (ca. 2-3 Sek.)
+```
+
+---
+
+### PROMPT 2.6 – Maßnahmen-Hub (Company Admin)
+
+```
+Implementiere den Maßnahmen-Hub für Company Admins in ELYO.
+At-Risk-Teams bekommen strukturierte Maßnahmen-Vorschläge statt nur einem Alert.
+
+DATENMODELL:
+model Measure {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  teamId      String?  // null = unternehmensweite Maßnahme
+  title       String
+  category    String   // "workshop" | "flexibility" | "sport" | "mental" | "nutrition"
+  description String
+  status      String   @default("SUGGESTED") // SUGGESTED | ACTIVE | COMPLETED | DISMISSED
+  suggestedAt DateTime @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdBy   String   // "system" | userId
+}
+
+MASSNAHMEN-KATALOG (src/lib/measures.ts):
+Statische Liste von ~20 Maßnahmen-Templates nach Kategorie:
+Wenn Belastung-Indikator > 7 → schlägt vor: "Teamworkshop Stressmanagement", "Flexible Arbeitszeiten diese Woche", "Kurzes Daily Stand-up reduzieren"
+Wenn Energie-Indikator < 5 → schlägt vor: "Bewegungspause einführen (10 Min.)", "Outdoor-Meeting vorschlagen"
+Wenn Partizipation < 50% → schlägt vor: "Reminder-Kampagne starten", "Team-Challenge aktivieren"
+
+AUTOMATISCHE VORSCHLAGS-LOGIK (src/lib/measureEngine.ts):
+- generateSuggestionsForCompany(companyId) → Measure[] anlegen
+- Läuft täglich via Cron-Job nach Check-in-Aggregation
+- Nur vorschlagen wenn kein gleiches Measure in den letzten 14 Tagen ACTIVE war
+
+UI: src/app/(app)/company/measures/page.tsx
+
+AUFBAU:
+1. AKTIVE MASSNAHMEN: Karten mit Status, Team, Kategorie-Icon, "Abschließen"-Button
+2. VORGESCHLAGENE MASSNAHMEN: Karten mit Begründung ("Belastungsindikator in IT: 8.1")
+   Buttons: "Aktivieren" | "Verwerfen"
+3. ABGESCHLOSSEN: Archiv-Tabelle (letzte 90 Tage)
+4. "+ Eigene Maßnahme" Button: Freitext-Formular
+
+At-Risk-Dashboard-Link: Alert-Banner verlinkt jetzt direkt auf /company/measures statt nur anzuzeigen.
+```
+
+---
+
+### PROMPT 2.7 – Push Notifications & Cron Hardening
+
+```
+Erweitere das bestehende Benachrichtigungs- und Cron-System für alle Phase-2-Features.
+
+1. WEB PUSH NOTIFICATIONS (src/lib/webPush.ts):
+   - Service Worker registrieren: public/sw.js
+   - PushSubscription in DB speichern:
+     model PushSubscription {
+       id        String @id @default(cuid())
+       userId    String
+       endpoint  String @unique
+       p256dh    String
+       auth      String
+       createdAt DateTime @default(now())
+     }
+   - sendPushToUser(userId, { title, body, url }) via web-push library
+   - Trigger-Events:
+     * Level-Up → "🎉 Du hast [LEVEL] erreicht! Dein neuer Vorteil wartet."
+     * Check-in-Reminder → "👋 Dein täglicher Check-in fehlt noch"
+     * At-Risk-Alert (Admin) → "⚠️ Erhöhte Belastungsindikatoren in [Team]"
+     * Wearable-Sync-Fehler → "⚡ Google Fit konnte nicht synchronisiert werden"
+
+2. CRON-JOB KONSOLIDIERUNG (src/app/api/cron/route.ts):
+   Alle Jobs in einer Route, via action-Parameter getrennt:
+   - action=daily-checkin-reminder  (bestehend)
+   - action=weekly-digest           (bestehend)
+   - action=wearable-sync           (neu – alle aktiven Google-Verbindungen)
+   - action=measure-engine          (neu – Maßnahmen-Vorschläge generieren)
+   - action=quality-monitor         (neu – Partner-Scores prüfen)
+   - action=streak-check            (neu – Streak-Bonus vergeben)
+
+   Jeder Job: try/catch + strukturiertes Logging + Laufzeit-Messung
+   Response: { results: { [action]: { success, duration, affected } } }
+
+3. NOTIFICATION PREFERENCES (src/app/(app)/profile/notifications/page.tsx):
+   Toggle-Liste für Mitarbeiter:
+   - Check-in-Reminder: an/aus + Uhrzeit wählen
+   - Level-Up-Benachrichtigung: immer an (nicht deaktivierbar – UX-Entscheidung)
+   - Weekly Summary: an/aus
+   - Partner-Neuigkeiten: an/aus
+   
+   Speichern in:
+   model NotificationPreference {
+     userId              String  @id
+     checkinReminder     Boolean @default(true)
+     checkinReminderTime String  @default("09:00")
+     weeklySummary       Boolean @default(true)
+     partnerUpdates      Boolean @default(false)
+   }
+
+4. UNSUBSCRIBE-LINK (DSGVO):
+   Jede System-E-Mail bekommt: "E-Mail-Einstellungen ändern" → /profile/notifications
+   One-Click-Opt-Out via signiertem Token in URL: /api/notifications/unsubscribe?token=…
+```
+
+---
+
+### PROMPT 2.8 – PWA Setup & Mobile Optimierung
+
+```
+Mache ELYO zur vollständigen Progressive Web App (PWA) für optimale Mobile-Nutzung.
+Mitarbeiter sollen die App zum Homescreen hinzufügen können – kein App-Store nötig.
+
+1. MANIFEST & SERVICE WORKER:
+   public/manifest.json:
+   {
+     "name": "ELYO",
+     "short_name": "ELYO",
+     "description": "Dein persönlicher Vitalitätsbegleiter",
+     "start_url": "/dashboard",
+     "display": "standalone",
+     "background_color": "#F7F6F2",
+     "theme_color": "#1B4D3E",
+     "icons": [72, 96, 128, 144, 152, 192, 384, 512]px PNG-Icons
+   }
+
+   public/sw.js (Service Worker):
+   - Cache-First für statische Assets (fonts, icons, CSS)
+   - Network-First für API-Calls
+   - Offline-Fallback: /offline.html wenn kein Netz + kein Cache
+   - Push-Notification-Handler (aus Prompt 2.7)
+   - Background-Sync: Check-in-Daten queuen wenn offline, bei Verbindung senden
+
+2. OFFLINE-SEITE (public/offline.html):
+   Einfache ELYO-gebrandete Seite:
+   "Du bist gerade offline. Dein Check-in wird gespeichert, sobald du wieder online bist."
+   Mit Offline-Check-in-Formular (3 Slider, speichert in IndexedDB)
+
+3. INSTALL-PROMPT:
+   src/components/ui/InstallBanner.tsx:
+   - Erscheint nach 3. App-Besuch (localStorage-Counter)
+   - "ELYO zum Homescreen hinzufügen" Banner (unten, dismissbar)
+   - Nutzt beforeinstallprompt-Event
+   - Nach Install: Banner dauerhaft verstecken
+
+4. MOBILE UX AUDIT (alle bestehenden Seiten):
+   Checklist für jede Seite:
+   - [ ] Touch-Targets min. 44×44px
+   - [ ] Kein horizontales Scrollen auf 375px
+   - [ ] Inputs triggern keinen Zoom (font-size min. 16px)
+   - [ ] Safe-Area-Insets für iPhone Notch (env(safe-area-inset-*))
+   - [ ] Swipe-Navigation auf Check-in-Steps (Framer Motion drag)
+
+5. NEXT.JS CONFIG:
+   next.config.ts: next-pwa Plugin konfigurieren
+   - Service Worker nur in Production aktiv
+   - Precache: alle Seiten unter /(app)/ 
+   - Runtime Cache für /api/partners, /api/points/me
 ```
 
 ---
@@ -975,8 +1306,17 @@ WOCHE 7-10:   PHASE 1 parallel zu Kundengesprächen
               → Feedback einbauen, Onboarding optimieren
               → Erster zahlender Kunde
 
-WOCHE 11-18:  PHASE 2 – Wearables + ESG PDF (Prompts 2.1–2.2)
-              → Retention steigt, Upgrade-Argument für Enterprise
+WOCHE 11-12:  PHASE 2a – Wearable Fundament (Prompts 2.1–2.3)
+              → DB-Schema, Google Health OAuth, Datenquellen-UI
+
+WOCHE 13-14:  PHASE 2b – ESG PDF (Prompts 2.4–2.5)
+              → Daten-Aggregation Backend, dann PDF-Rendering
+
+WOCHE 15-16:  PHASE 2c – Maßnahmen-Hub (Prompt 2.6)
+              → At-Risk → strukturierte Interventionen
+
+WOCHE 17-18:  PHASE 2d – Push + PWA (Prompts 2.7–2.8)
+              → Mobile-Retention, Offline-Fähigkeit
 
 WOCHE 19+:    PHASE 3 – Terra + Partner-Monetarisierung
               → Zweites Umsatzbein aktiviert
