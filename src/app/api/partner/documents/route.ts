@@ -6,6 +6,8 @@ import { verifyPartnerSession, PARTNER_SESSION_COOKIE } from '@/lib/partners/aut
 const MAX_SIZE = 5 * 1024 * 1024
 const ALLOWED_MIME = new Set(['application/pdf', 'image/png', 'image/jpeg'])
 
+export const runtime = 'nodejs'
+
 export async function POST(req: NextRequest) {
   const token = req.cookies.get(PARTNER_SESSION_COOKIE)?.value
   if (!token) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
@@ -24,18 +26,10 @@ export async function POST(req: NextRequest) {
   if (!ALLOWED_MIME.has(file.type)) return NextResponse.json({ error: 'invalid_file' }, { status: 400 })
   if (file.size > MAX_SIZE) return NextResponse.json({ error: 'too_large' }, { status: 413 })
 
-  // Delete existing nachweis (best-effort)
-  if (partner.nachweisUrl) {
-    try {
-      const url = new URL(partner.nachweisUrl)
-      await del(url.pathname.replace(/^\//, ''))
-    } catch (err) {
-      console.warn('partner documents: old blob delete failed', err)
-    }
-  }
-
   const extMatch = file.name.match(/\.(pdf|png|jpe?g)$/i)
   const ext = extMatch ? extMatch[0] : ''
+
+  const previousNachweisUrl = partner.nachweisUrl
 
   let blob: Awaited<ReturnType<typeof put>> | null = null
   try {
@@ -44,6 +38,7 @@ export async function POST(req: NextRequest) {
       file,
       { access: 'public' },
     )
+
     await prisma.partner.update({
       where: { id: partner.id },
       data: {
@@ -51,10 +46,21 @@ export async function POST(req: NextRequest) {
         verificationStatus: partner.verificationStatus === 'PENDING_DOCS' ? 'PENDING_REVIEW' : partner.verificationStatus,
       },
     })
-    return NextResponse.json({ nachweisUrl: blob.url })
   } catch (err) {
-    if (blob) await del(blob.pathname).catch(() => {})
+    // Roll back the new blob if write succeeded but DB update failed
+    if (blob) await del(blob.url).catch(() => {})
     console.error('partner nachweis upload failed', err)
     return NextResponse.json({ error: 'storage_failed' }, { status: 502 })
   }
+
+  // Success path: delete old blob (best-effort, never blocks response)
+  if (previousNachweisUrl) {
+    try {
+      await del(previousNachweisUrl)
+    } catch (err) {
+      console.warn('partner documents: old blob delete failed', err)
+    }
+  }
+
+  return NextResponse.json({ nachweisUrl: blob.url })
 }
