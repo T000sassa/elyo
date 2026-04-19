@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { seedPartners } from '../src/lib/partners/seed';
 
 const prisma = new PrismaClient();
 
@@ -178,6 +179,31 @@ async function main() {
     }
     console.log('✅ 3 WearableSync entries created for first employee')
   }
+
+  // ── ELYO-Staff Seed ────────────────────────────────────────────────────────
+  const elyoEmail = process.env.ELYO_INITIAL_ADMIN_EMAIL
+  const elyoPassword = process.env.ELYO_INITIAL_ADMIN_PASSWORD
+  if (elyoEmail && elyoPassword) {
+    const elyoHash = await bcrypt.hash(elyoPassword, 12)
+    await prisma.user.upsert({
+      where: { email: elyoEmail },
+      update: {},
+      create: {
+        email: elyoEmail,
+        name: 'ELYO Admin',
+        passwordHash: elyoHash,
+        role: 'ELYO_ADMIN',
+        companyId: null,
+      },
+    })
+    console.log('✅ ELYO_ADMIN:', elyoEmail)
+  } else {
+    console.log('ℹ️  Skipped ELYO_ADMIN seed (ELYO_INITIAL_ADMIN_EMAIL/PASSWORD not set)')
+  }
+
+  // ── Partner Seed ───────────────────────────────────────────────────────────
+  await seedPartners(prisma)
+  console.log('✅ Seeded 8 demo partners')
 
   console.log("\n🎉 Seed complete!\n");
   console.log("  Company Admin:    admin@demo.de / demo1234");
