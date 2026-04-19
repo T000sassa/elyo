@@ -9,9 +9,15 @@ export default async function DataSourcesPage() {
   if (!session?.user) redirect('/auth/login')
   if (session.user.role !== 'EMPLOYEE') redirect('/dashboard')
 
-  const [connection, documents] = await Promise.all([
+  const [connection, ouraConnection, garminConnection, documents] = await Promise.all([
     prisma.wearableConnection.findUnique({
       where: { userId_source: { userId: session.user.id, source: 'google_health' } },
+    }),
+    prisma.wearableConnection.findUnique({
+      where: { userId_source: { userId: session.user.id, source: 'oura' } },
+    }),
+    prisma.wearableConnection.findUnique({
+      where: { userId_source: { userId: session.user.id, source: 'garmin' } },
     }),
     prisma.userDocument.findMany({
       where: { userId: session.user.id },
@@ -31,7 +37,12 @@ export default async function DataSourcesPage() {
         Alle Daten gehören dir. Dein Arbeitgeber sieht diese nicht.
       </p>
       <Suspense fallback={<div className="h-40" />}>
-        <DataSourcesTabs connection={connection} documents={documents} />
+        <DataSourcesTabs
+          connection={connection}
+          ouraConnection={ouraConnection}
+          garminConnection={garminConnection}
+          documents={documents}
+        />
       </Suspense>
     </div>
   )

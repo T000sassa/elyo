@@ -23,10 +23,12 @@ const tabVariants = {
 
 interface Props {
   connection: WearableConnection | null
+  ouraConnection: WearableConnection | null
+  garminConnection: WearableConnection | null
   documents: UserDocument[]
 }
 
-export function DataSourcesTabs({ connection, documents }: Props) {
+export function DataSourcesTabs({ connection, ouraConnection, garminConnection, documents }: Props) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const VALID_TABS: Tab[] = ['connected', 'available', 'documents']
@@ -80,7 +82,11 @@ export function DataSourcesTabs({ connection, documents }: Props) {
         )}
         {activeTab === 'available' && (
           <motion.div key="available" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-            <AvailableTab isGoogleConnected={isConnected} />
+            <AvailableTab
+              isGoogleConnected={isConnected}
+              isOuraConnected={ouraConnection?.isActive === true}
+              isGarminConnected={garminConnection?.isActive === true}
+            />
           </motion.div>
         )}
         {activeTab === 'documents' && (
