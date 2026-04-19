@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { awardPoints, POINT_RULES, type PointReason } from '@/lib/points'
+import { sendPushToUser } from '@/lib/webPush'
 import { z } from 'zod'
 
 const AwardSchema = z.object({
@@ -24,5 +25,14 @@ export async function POST(req: NextRequest) {
       : session.user.id
 
   const result = await awardPoints(targetUserId, parsed.data.reason)
+
+  if (result.levelChanged && result.newLevel) {
+    sendPushToUser(targetUserId, {
+      title: '🎉 Neues Level erreicht!',
+      body: `Du hast ${result.newLevel} erreicht! Dein neuer Vorteil ist jetzt aktiv.`,
+      url: '/level',
+    }).catch(err => console.error('[award] push failed:', err))
+  }
+
   return NextResponse.json({ data: result })
 }

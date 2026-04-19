@@ -5,6 +5,7 @@ import { sendCheckinReminder, sendWeeklyDigest } from '@/lib/email'
 import { getAggregatedMetrics, getContinuityData } from '@/lib/anonymize'
 import { fetchSteps, fetchSleepSessions, fetchHeartRateAvg } from '@/lib/googleHealth'
 import { generateSuggestionsForAllCompanies } from '@/lib/measureEngine'
+import { awardPoints, calculateStreak } from '@/lib/points'
 
 type ActionResult = { success: boolean; duration: number; affected: number; error?: string }
 
@@ -108,6 +109,46 @@ async function runMeasureEngine(): Promise<ActionResult> {
   return { success: true, duration: Math.round(performance.now() - start), affected }
 }
 
+async function runStreakCheck(): Promise<ActionResult> {
+  const start = performance.now()
+  const allPoints = await prisma.userPoints.findMany({
+    where: { streak: { gte: 7 } },
+    select: { userId: true, streak: true },
+  })
+
+  let affected = 0
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+
+  for (const { userId } of allPoints) {
+    try {
+      const currentStreak = await calculateStreak(userId)
+      if (currentStreak >= 7) {
+        const recent7 = await prisma.pointTransaction.findFirst({
+          where: { userId, reason: 'streak_7days', createdAt: { gte: sevenDaysAgo } },
+        })
+        if (!recent7) {
+          await awardPoints(userId, 'streak_7days')
+          affected++
+        }
+      }
+      if (currentStreak >= 30) {
+        const recent30 = await prisma.pointTransaction.findFirst({
+          where: { userId, reason: 'streak_30days', createdAt: { gte: thirtyDaysAgo } },
+        })
+        if (!recent30) {
+          await awardPoints(userId, 'streak_30days')
+          affected++
+        }
+      }
+    } catch (err) {
+      console.error(`[cron:streak-check] user=${userId}`, err)
+    }
+  }
+
+  return { success: true, duration: Math.round(performance.now() - start), affected }
+}
+
 export async function POST(req: NextRequest) {
   if (!verifyCronSecret(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -128,6 +169,8 @@ export async function POST(req: NextRequest) {
       results['wearable-sync'] = await runWearableSync()
     } else if (action === 'measure-engine') {
       results['measure-engine'] = await runMeasureEngine()
+    } else if (action === 'streak-check') {
+      results['streak-check'] = await runStreakCheck()
     } else {
       return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 })
     }
