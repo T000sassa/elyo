@@ -376,6 +376,9 @@ model WearableSync {
   steps      Int?
   heartRate  Float?
   sleepHours Float?
+  recoveryScore Float?
+  hrv           Float?
+  readiness     Float?
   syncedAt   DateTime @default(now())
 
   @@unique([userId, source, date])
