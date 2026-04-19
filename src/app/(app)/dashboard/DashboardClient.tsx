@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { motion } from 'framer-motion'
 import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
 import styles from './mitarbeiter.module.css'
 
@@ -58,12 +57,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
   const pointsLeft = level.nextLevel === null ? 0 : Math.max(0, level.threshold - level.total)
 
   return (
-    <motion.div
-      className={styles['dashboard-root']}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
+    <>
       {/* GREETING */}
       <div className={styles['greeting-card']}>
         {streak > 0 && (
@@ -487,6 +481,6 @@ export function DashboardClient({ data }: { data: DashboardData }) {
         </div>
 
       </div>
-    </motion.div>
+    </>
   )
 }

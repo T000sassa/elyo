@@ -1,14 +1,12 @@
 import { RoleProvider } from '@/contexts/RoleContext'
-import { AppShell } from '@/components/layout/AppShell'
-import { RoleSwitcher } from '@/components/layout/RoleSwitcher'
+import { MitarbeiterShell } from './MitarbeiterShell'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <RoleProvider>
-      <AppShell>
+      <MitarbeiterShell>
         {children}
-      </AppShell>
-      <RoleSwitcher />
+      </MitarbeiterShell>
     </RoleProvider>
   )
 }
