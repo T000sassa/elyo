@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { ArrowRight, MapPin, ClipboardList } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { ScoreGauge } from '@/components/ui/score-gauge'
 import { MetricChip } from '@/components/ui/metric-chip'
 import { ProgressBar } from '@/components/ui/progress-bar'
@@ -19,12 +20,6 @@ const MOCK_SCORE_HISTORY = [
   { day: 'So', score: 72 },
 ]
 
-const MOCK_PARTNERS = [
-  { name: 'Physiozentrum München',   type: 'Physiotherapie', dist: '1.2 km', rating: 4.9 },
-  { name: 'YogaFlow Studio',         type: 'Bewegung',       dist: '2.8 km', rating: 4.7 },
-  { name: 'Ernährungsberatung Koch', type: 'Ernährung',      dist: '3.4 km', rating: 4.8 },
-]
-
 const MOCK_SURVEYS = [
   { title: 'Quartalsbefragung Q2 2026', minutes: 3 },
   { title: 'Ergonomie am Arbeitsplatz', minutes: 2 },
@@ -38,6 +33,17 @@ const stagger = {
 export default function EmployeeDashboardPage() {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Guten Morgen' : hour < 18 ? 'Guten Tag' : 'Guten Abend'
+
+  const [partners, setPartners] = useState<Array<{ id: string; name: string; type: string; categories: string[]; city: string | null }>>([])
+
+  useEffect(() => {
+    fetch('/api/partners?take=3')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.partners) setPartners(data.partners.slice(0, 3))
+      })
+      .catch(() => {/* silent */})
+  }, [])
 
   return (
     <motion.div
@@ -157,9 +163,9 @@ export default function EmployeeDashboardPage() {
           </Link>
         </div>
         <div className="flex gap-4 overflow-x-auto pb-2">
-          {MOCK_PARTNERS.map((p) => (
+          {partners.map((p) => (
             <div
-              key={p.name}
+              key={p.id}
               className="flex-shrink-0 w-52 rounded-2xl p-4 card-lift"
               style={{ background: 'white', border: '1px solid hsl(200, 15%, 88%)' }}
             >
@@ -167,9 +173,8 @@ export default function EmployeeDashboardPage() {
                 <MapPin className="w-5 h-5" style={{ color: '#14b8a6' }} />
               </div>
               <p className="text-sm font-semibold text-gray-800 leading-tight mb-1">{p.name}</p>
-              <p className="text-xs text-gray-400">{p.type} · {p.dist}</p>
+              <p className="text-xs text-gray-400">{p.type === 'DIGITAL' ? 'digital' : (p.city ?? 'vor Ort')}</p>
               <div className="flex items-center gap-1 mt-2">
-                <span className="text-xs font-semibold text-gray-700">⭐ {p.rating}</span>
                 <span className="ml-auto text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: '#f0fdf9', color: '#14b8a6' }}>
                   ELYO Verified
                 </span>
