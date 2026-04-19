@@ -153,8 +153,9 @@ model Team {
   managerId String?
   manager   User?   @relation("TeamManager", fields: [managerId], references: [id])
 
-  members User[]
-  surveys Survey[] @relation("TeamSurveys")
+  members  User[]
+  surveys  Survey[]    @relation("TeamSurveys")
+  measures Measure[]
 
   @@index([companyId])
   @@map("teams")
@@ -404,6 +405,7 @@ model Measure {
   companyId   String
   company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   teamId      String?
+  team        Team?     @relation(fields: [teamId], references: [id])
   title       String
   category    String
   description String
