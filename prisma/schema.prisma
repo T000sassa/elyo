@@ -13,6 +13,7 @@ enum Role {
   COMPANY_ADMIN
   COMPANY_MANAGER
   EMPLOYEE
+  ELYO_ADMIN
 }
 
 enum SurveyStatus {
@@ -31,6 +32,14 @@ enum QuestionType {
 enum CheckinFrequency {
   DAILY
   WEEKLY
+}
+
+enum PartnerVerificationStatus {
+  PENDING_DOCS
+  PENDING_REVIEW
+  VERIFIED
+  SUSPENDED
+  REJECTED
 }
 
 // ── Company (Tenant) ─────────────────────────────────────────────────────────
@@ -73,8 +82,8 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   teamId String?
   team   Team?   @relation(fields: [teamId], references: [id])
@@ -447,4 +456,43 @@ model NotificationPreference {
   checkinReminderTime String  @default("09:00")
   weeklySummary       Boolean @default(true)
   partnerUpdates      Boolean @default(false)
+}
+
+// ── Partner ───────────────────────────────────────────────────────────────────
+
+model Partner {
+  id                 String                    @id @default(cuid())
+
+  email              String                    @unique
+  passwordHash       String
+
+  name               String
+  type               String
+  categories         String[]
+  description        String                    @db.Text
+
+  address            String?
+  city               String?
+  lat                Float?
+  lng                Float?
+
+  website            String?
+  phone              String?
+
+  minimumLevel       String                    @default("STARTER")
+
+  nachweisUrl        String?
+
+  verificationStatus PartnerVerificationStatus @default(PENDING_DOCS)
+  rejectionReason    String?
+  reviewedAt         DateTime?
+  reviewedById       String?
+
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  @@index([verificationStatus])
+  @@index([categories])
+  @@index([lat, lng])
+  @@map("partners")
 }

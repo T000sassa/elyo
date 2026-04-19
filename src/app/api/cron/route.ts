@@ -40,6 +40,7 @@ async function runCheckinReminder(baseUrl: string): Promise<ActionResult> {
   let sent = 0
   for (const emp of employees) {
     if (checkedInIds.has(emp.id)) continue
+    if (!emp.company) continue // Skip employees without a company
     const ok = await sendCheckinReminder({ to: emp.email, name: emp.name ?? 'Mitarbeiter', companyName: emp.company.name, checkinUrl: `${baseUrl}/checkin` })
     if (ok) sent++
   }

@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
     include: { company: { select: { checkinFrequency: true } } },
   });
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!user.company || !user.companyId) return NextResponse.json({ error: "Employee must belong to a company" }, { status: 403 });
 
   const periodKey = getPeriodKey(user.company.checkinFrequency);
 

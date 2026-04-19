@@ -46,7 +46,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // For managers: find the team they manage
         let managedTeamId: string | null = null;
-        if (user.role === "COMPANY_MANAGER") {
+        if (user.role === "COMPANY_MANAGER" && user.companyId) {
           const managedTeam = await prisma.team.findFirst({
             where: { managerId: user.id, companyId: user.companyId },
             select: { id: true },
@@ -59,7 +59,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.name,
           role: user.role,
-          companyId: user.companyId,
+          // ELYO_ADMIN has no companyId — coerce to empty string for session typing.
+          // Routes that need a real companyId gate on role first (e.g. role !== 'EMPLOYEE' → 403).
+          companyId: user.companyId ?? '',
           managedTeamId,
         };
       },
