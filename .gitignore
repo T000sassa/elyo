@@ -37,3 +37,6 @@ next-env.d.ts
 
 /src/generated/prisma
 .env
+
+# superpowers brainstorm working state
+.superpowers/
