@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ELYO · Mitarbeiterseite — Dein Vitalitäts-Begleiter</title>
+<link rel="stylesheet" href="elyo.css">
+<style>
+/* ================================================================
+   Mitarbeiterseite — spezifische Styles
+   Ton: persönlich, warm, motivierend, nie medizinisch
+   ================================================================ */
+
+/* Persönlicher Greeting-Header */
+.greeting-card {
+  background: linear-gradient(120deg, #FDF8EC 0%, #F4E1BD 48%, #EED7A3 100%);
+  border-radius: var(--radius-xl);
+  padding: 36px 40px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.greeting-card::before {
+  content: "";
+  position: absolute;
+  top: -40%; right: -10%;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(27,77,62,0.12), transparent 60%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.greeting-tag {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--elyo-amber-700);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.greeting-card h1 {
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 400;
+  color: var(--elyo-green-700);
+  margin-bottom: 6px;
+  letter-spacing: -0.015em;
+}
+.greeting-card h1 em {
+  font-style: italic;
+  color: var(--elyo-green-500);
+}
+.greeting-card p {
+  color: var(--elyo-green-700);
+  font-size: 15px;
+  margin: 0 0 20px;
+  max-width: 480px;
+  opacity: 0.85;
+}
+
+.streak-flame {
+  position: absolute;
+  top: 28px;
+  right: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(8px);
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.7);
+  box-shadow: var(--shadow-sm);
+}
+.streak-flame .flame {
+  font-size: 18px;
+  animation: flicker 1.8s infinite;
+}
+.streak-flame .num {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--elyo-green-700);
+}
+.streak-flame .lbl { font-size: 12px; color: var(--elyo-green-500); font-weight: 500; }
+
+@keyframes flicker {
+  0%, 100% { transform: scale(1) rotate(0); }
+  30% { transform: scale(1.08) rotate(-3deg); }
+  60% { transform: scale(0.98) rotate(2deg); }
+}
+
+.checkin-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: var(--elyo-green-500);
+  color: #FDF8EC;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14.5px;
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  transition: all 200ms ease;
+}
+.checkin-cta:hover { background: var(--elyo-green-700); transform: translateY(-1px); }
+.checkin-cta .pulse {
+  width: 8px; height: 8px;
+  background: var(--elyo-amber-300);
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(224,181,101,0.7);
+  animation: pulse 1.6s infinite;
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(224,181,101,0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(224,181,101,0); }
+  100% { box-shadow: 0 0 0 0 rgba(224,181,101,0); }
+}
+
+/* Score-Gauge */
+.score-card {
+  background: var(--elyo-surface);
+  border: 1px solid var(--elyo-line);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  box-shadow: var(--shadow-xs);
+}
+.gauge-big { flex-shrink: 0; position: relative; }
+.gauge-big .gauge-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 10px;
+}
+.gauge-big .gauge-num {
+  font-family: var(--font-display);
+  font-size: 56px;
+  font-weight: 500;
+  color: var(--elyo-ink);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.gauge-big .gauge-sub {
+  font-size: 11px;
+  color: var(--elyo-ink-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-top: 2px;
+}
+
+.score-info h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--elyo-green-700);
+  margin-bottom: 8px;
+}
+.score-info p { color: var(--elyo-ink-soft); font-size: 14px; margin: 0 0 20px; line-height: 1.55; max-width: 380px; }
+
+.score-chips {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.metric-chip {
+  padding: 10px 14px;
+  background: var(--elyo-surface-2);
+  border: 1px solid var(--elyo-line);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 100px;
+}
+.metric-chip .mc-lbl { font-size: 11px; color: var(--elyo-ink-mute); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; }
+.metric-chip .mc-val { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--elyo-ink); }
+.metric-chip .mc-val .unit { font-size: 11px; color: var(--elyo-ink-mute); font-weight: 400; margin-left: 2px; }
+
+/* Level Card */
+.level-card {
+  background: linear-gradient(135deg, var(--elyo-green-500) 0%, var(--elyo-green-700) 100%);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  color: #FDF8EC;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.level-card::before {
+  content: "";
+  position: absolute;
+  top: -60%; left: -20%;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(200,145,58,0.25), transparent 65%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.level-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
+}
+.level-emblem {
+  width: 58px; height: 58px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #C6CCD3, #98A0A8);
+  display: grid; place-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: #2B3137;
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.2);
+  position: relative;
+  overflow: hidden;
+}
+.level-emblem::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  animation: shine 4s infinite;
+}
+@keyframes shine {
+  0% { left: -100%; }
+  40%, 100% { left: 100%; }
+}
+
+.level-label { font-size: 12px; color: var(--elyo-amber-100); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
+.level-name {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 500;
+  color: #FDF8EC;
+}
+.level-days { font-size: 12.5px; color: #CDDCD4; margin-top: 2px; }
+
+.level-progress-wrap { position: relative; z-index: 1; }
+.level-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #CDDCD4;
+}
+.level-progress-head strong { color: var(--elyo-amber-300); font-weight: 600; }
+.level-progress-head .pct { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: #FDF8EC; }
+.level-progress-track {
+  height: 10px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.level-progress-fill {
+  height: 100%;
+  width: 65%;
+  background: linear-gradient(90deg, var(--elyo-amber-300), var(--elyo-amber-500));
+  border-radius: 999px;
+  position: relative;
+}
+.level-progress-fill::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+  animation: shimmer 2.6s infinite;
+}
+
+.privilege-list {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+.privilege {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(4px);
+  font-size: 13.5px;
+}
+.privilege .p-icon {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: rgba(200,145,58,0.3);
+  display: grid; place-items: center;
+  color: var(--elyo-amber-300);
+  flex-shrink: 0;
+}
+.privilege.locked { opacity: 0.55; }
+.privilege.locked .p-icon { background: rgba(255,255,255,0.08); color: #9FB2AA; }
+.privilege .p-text { flex: 1; color: #FDF8EC; }
+.privilege .p-text small { color: #A5B9B2; font-size: 11.5px; }
+
+/* Partner-Karussell */
+.partners-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 14px;
+}
+.partner-card-sm {
+  background: var(--elyo-surface);
+  border: 1px solid var(--elyo-line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all 200ms ease;
+  cursor: pointer;
+}
+.partner-card-sm:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.partner-card-sm .partner-img {
+  height: 110px;
+  background: linear-gradient(135deg, #D6E3DD, #9FBEB1);
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.partner-card-sm .partner-img.yoga    { background: linear-gradient(135deg, #F4DFB4, #E0B565); }
+.partner-card-sm .partner-img.doctor  { background: linear-gradient(135deg, #CFD9D3, #9FBEB1); }
+.partner-card-sm .partner-img.online  { background: linear-gradient(135deg, #D6E3DD, #5C8574); }
+.partner-card-sm .verified-pill {
+  position: absolute;
+  top: 10px; right: 10px;
+  background: var(--elyo-surface);
+  color: var(--elyo-green-500);
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: var(--shadow-sm);
+}
+.partner-card-sm .partner-type-icon {
+  font-size: 40px;
+  opacity: 0.85;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+.partner-card-sm .partner-body { padding: 14px; }
+.partner-card-sm .partner-name { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--elyo-ink); margin-bottom: 2px; }
+.partner-card-sm .partner-meta { font-size: 12px; color: var(--elyo-ink-mute); display:flex; gap:6px; margin-bottom: 8px; }
+.partner-card-sm .partner-foot { display: flex; justify-content: space-between; align-items: center; }
+.partner-card-sm .rating {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--elyo-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.partner-card-sm .rating .star { color: var(--elyo-amber-500); }
+.partner-card-sm .level-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.partner-card-sm .level-tag.silver { background: #EAECEE; color: #55616B; }
+.partner-card-sm .level-tag.gold   { background: #FBF3E5; color: var(--elyo-amber-700); }
+.partner-card-sm .level-tag.all    { background: var(--elyo-green-50); color: var(--elyo-green-700); }
+
+/* Surveys */
+.survey-card {
+  background: var(--elyo-surface);
+  border: 1px solid var(--elyo-line);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.survey-card:hover { border-color: var(--elyo-green-200); background: var(--elyo-surface-2); }
+.survey-icon {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  background: var(--elyo-amber-50);
+  color: var(--elyo-amber-700);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.survey-body { flex: 1; }
+.survey-title { font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--elyo-ink); margin-bottom: 2px; }
+.survey-meta { font-size: 12.5px; color: var(--elyo-ink-mute); }
+
+/* Mini-Chart */
+.spark-card {
+  background: var(--elyo-surface);
+  border: 1px solid var(--elyo-line);
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+.spark-val { font-family: var(--font-display); font-size: 26px; font-weight: 500; color: var(--elyo-ink); margin-bottom: 2px; }
+.spark-lbl { font-size: 12px; color: var(--elyo-ink-mute); letter-spacing: 0.06em; text-transform: uppercase; }
+.spark-line { margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<!-- Rollen-Leiste -->
+<div class="role-switch">
+  <div class="role-switch-inner">
+    <span class="role-switch-label">◆ ELYO Demo-Modus</span>
+    <span style="color:rgba(237,229,208,0.5)">Oberflächen-Vorschau · Phase 0</span>
+    <div class="role-switch-links">
+      <a href="unternehmen.html">Unternehmen</a>
+      <a href="mitarbeiter.html" class="active">Mitarbeiter</a>
+      <a href="partner-login.html">Partner-Login</a>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">E</div>
+      <div class="logo-name">elyo</div>
+    </div>
+
+    <div class="nav-section-label">Mein Tag</div>
+    <a class="nav-item active">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2 7-7 7 7 2 2M5 10v10a1 1 0 001 1h3v-6a1 1 0 011-1h4a1 1 0 011 1v6h3a1 1 0 001-1V10"/></svg>
+      Dashboard
+    </a>
+    <a class="nav-item">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Täglicher Check-in
+      <span class="badge">•</span>
+    </a>
+    <a class="nav-item">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Partner in der Nähe
+    </a>
+    <a class="nav-item">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
+      Level & Vorteile
+    </a>
+
+    <div class="nav-section-label">Mein Profil</div>
+    <a class="nav-item">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Anamnese
+    </a>
+    <a class="nav-item">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 20h4"/></svg>
+      Datenquellen
+    </a>
+    <a class="nav-item">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11H5a2 2 0 00-2 2v5a2 2 0 002 2h4m0-9h6a2 2 0 012 2v5a2 2 0 01-2 2h-4m-2-9v-6a3 3 0 016 0v6"/></svg>
+      Umfragen
+      <span class="badge">2</span>
+    </a>
+    <a class="nav-item">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Einstellungen
+    </a>
+
+    <div class="sidebar-foot">
+      <strong>🔒 Deine Daten</strong>
+      Kein Arbeitgeber sieht deine Einzelwerte. Immer.
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <!-- HEADER -->
+    <div class="header">
+      <div>
+        <div class="header-title">Dashboard <span>· Dein Tag im Überblick</span></div>
+      </div>
+      <div class="header-spacer"></div>
+      <div class="icon-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3A6 6 0 006 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"/></svg>
+        <span class="dot"></span>
+      </div>
+      <div class="avatar">
+        <div class="avatar-img">SM</div>
+        <div class="avatar-meta">
+          <div class="avatar-name">Sarah M.</div>
+          <div class="avatar-role"><span class="level-badge silver">◆ Silver</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- GREETING -->
+      <div class="greeting-card">
+        <div class="streak-flame">
+          <span class="flame">🔥</span>
+          <div>
+            <div class="num">14 Tage</div>
+            <div class="lbl">Check-in-Serie</div>
+          </div>
+        </div>
+
+        <div class="greeting-tag">◇ Guten Morgen · Mittwoch</div>
+        <h1>Hallo Sarah, <em>schön dass du da bist.</em></h1>
+        <p>Dein Vitalitäts-Score zeigt eine leicht aufsteigende Tendenz über die letzten sieben Tage. Zeit für den heutigen Check-in?</p>
+
+        <a href="#" class="checkin-cta">
+          <span class="pulse"></span>
+          Heute einchecken · ~30 Sek.
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
+        </a>
+      </div>
+
+      <!-- SCORE + LEVEL -->
+      <div class="grid grid-3-2 mb-5">
+
+        <!-- Score -->
+        <div class="score-card">
+          <div class="gauge-big">
+            <svg width="220" height="140" viewBox="0 0 220 140">
+              <defs>
+                <linearGradient id="scg" x1="0" x2="1">
+                  <stop offset="0" stop-color="#2E7D5B"/>
+                  <stop offset="1" stop-color="#C8913A"/>
+                </linearGradient>
+              </defs>
+              <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#EEF3F1" stroke-width="16" stroke-linecap="round"/>
+              <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="url(#scg)" stroke-width="16" stroke-linecap="round"
+                    stroke-dasharray="283" stroke-dashoffset="79"/>
+              <!-- kleiner Marker -->
+              <circle cx="167" cy="44" r="6" fill="#C8913A" stroke="#FFF" stroke-width="3"/>
+            </svg>
+            <div class="gauge-center">
+              <div class="gauge-num">72</div>
+              <div class="gauge-sub">dein vitalitäts-score</div>
+            </div>
+          </div>
+          <div class="score-info">
+            <h2>Gute Balance diese Woche.</h2>
+            <p>Dein Score kombiniert Energie, Stimmung und Belastung. Sieben Check-ins, drei Wearable-Syncs — weiter so.</p>
+            <div class="score-chips">
+              <div class="metric-chip">
+                <span class="mc-lbl">Energie</span>
+                <span class="mc-val">7.2<span class="unit">/10</span></span>
+              </div>
+              <div class="metric-chip">
+                <span class="mc-lbl">Stimmung</span>
+                <span class="mc-val">6.8<span class="unit">/10</span></span>
+              </div>
+              <div class="metric-chip">
+                <span class="mc-lbl">Belastung</span>
+                <span class="mc-val">4.1<span class="unit">/10</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Level -->
+        <div class="level-card">
+          <div class="level-card-head">
+            <div>
+              <div class="level-label">Dein Level</div>
+              <div class="level-name">Silver</div>
+              <div class="level-days">Seit 47 Tagen dabei</div>
+            </div>
+            <div class="level-emblem">
+              ◆
+            </div>
+          </div>
+
+          <div class="level-progress-wrap">
+            <div class="level-progress-head">
+              <span>Auf dem Weg zu <strong>GOLD</strong></span>
+              <span class="pct">65 %</span>
+            </div>
+            <div class="level-progress-track">
+              <div class="level-progress-fill"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:#A5B9B2;">
+              <span>Silver</span>
+              <span>Noch 28 Punkte</span>
+              <span>Gold</span>
+            </div>
+          </div>
+
+          <div class="privilege-list">
+            <div class="privilege">
+              <div class="p-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              </div>
+              <div class="p-text">
+                20 % Rabatt bei Partner-Studios
+                <small style="display:block">Automatisch angewendet</small>
+              </div>
+            </div>
+            <div class="privilege">
+              <div class="p-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              </div>
+              <div class="p-text">Bevorzugter Terminzugang (24 h)</div>
+            </div>
+            <div class="privilege locked">
+              <div class="p-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              </div>
+              <div class="p-text">
+                ⚡ Fast Lane zu Experten
+                <small style="display:block">Ab GOLD freigeschaltet</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MINI-CHARTS ROW -->
+      <div class="grid grid-4 mb-5">
+        <div class="spark-card">
+          <div class="spark-lbl">◇ Verlauf 7 Tage</div>
+          <div class="spark-val">72 <span style="font-size:12px;color:var(--elyo-ok);font-weight:600">▲ +4</span></div>
+          <div class="spark-line">
+            <svg width="100%" height="36" viewBox="0 0 200 36" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="sa" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0" stop-color="#1B4D3E" stop-opacity="0.3"/>
+                  <stop offset="1" stop-color="#1B4D3E" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M 0 22 L 33 18 L 66 24 L 100 12 L 133 16 L 166 14 L 200 10 L 200 36 L 0 36 Z" fill="url(#sa)"/>
+              <path d="M 0 22 L 33 18 L 66 24 L 100 12 L 133 16 L 166 14 L 200 10" fill="none" stroke="#1B4D3E" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="200" cy="10" r="3" fill="#1B4D3E"/>
+            </svg>
+          </div>
+        </div>
+        <div class="spark-card">
+          <div class="spark-lbl">🔥 Aktive Serie</div>
+          <div class="spark-val">14 Tage</div>
+          <div class="spark-line" style="display:flex;gap:3px;margin-top:14px;">
+            <!-- 14 kleine Flammen-balken -->
+            <span style="flex:1;height:22px;background:#C8913A;border-radius:2px;"></span>
+            <span style="flex:1;height:22px;background:#C8913A;border-radius:2px;"></span>
+            <span style="flex:1;height:22px;background:#C8913A;border-radius:2px;"></span>
+            <span style="flex:1;height:22px;background:#C8913A;border-radius:2px;"></span>
+            <span style="flex:1;height:22px;background:#C8913A;border-radius:2px;"></span>
+            <span style="flex:1;height:22px;background:#C8913A;border-radius:2px;"></span>
+            <span style="flex:1;height:22px;background:#C8913A;border-radius:2px;"></span>
+            <span style="flex:1;height:22px;background:#E0B565;border-radius:2px;"></span>
+            <span style="flex:1;height:22px;background:#E0B565;border-radius:2px;"></span>
+            <span style="flex:1;height:22px;background:#E0B565;border-radius:2px;"></span>
+            <span style="flex:1;height:22px;background:#E0B565;border-radius:2px;"></span>
+            <span style="flex:1;height:22px;background:#F4DFB4;border-radius:2px;"></span>
+            <span style="flex:1;height:22px;background:#F4DFB4;border-radius:2px;"></span>
+            <span style="flex:1;height:22px;background:#F4DFB4;border-radius:2px;"></span>
+          </div>
+        </div>
+        <div class="spark-card">
+          <div class="spark-lbl">💤 Schlaf-Signal</div>
+          <div class="spark-val">7h 12m</div>
+          <div class="spark-line">
+            <svg width="100%" height="36" viewBox="0 0 200 36" preserveAspectRatio="none">
+              <path d="M 0 14 L 33 20 L 66 12 L 100 18 L 133 10 L 166 14 L 200 8" fill="none" stroke="#5C8574" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="200" cy="8" r="3" fill="#5C8574"/>
+            </svg>
+          </div>
+        </div>
+        <div class="spark-card">
+          <div class="spark-lbl">⚡ Punkte diese Woche</div>
+          <div class="spark-val">+28 <span style="font-size:12px;color:var(--elyo-ink-mute);font-weight:500">von 100 zu GOLD</span></div>
+          <div class="spark-line" style="margin-top:18px;">
+            <div class="progress"><div class="progress-bar" style="width:65%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PARTNERS IN DER NÄHE -->
+      <div class="card mb-5">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Partner in deiner Nähe</div>
+            <div class="card-sub">3 geprüfte Angebote im Umkreis · SILVER-Vorteile aktiv</div>
+          </div>
+          <a href="#" class="btn btn-ghost btn-sm">Alle 87 Partner →</a>
+        </div>
+
+        <div class="partners-strip">
+
+          <div class="partner-card-sm">
+            <div class="partner-img">
+              <span class="verified-pill">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                VERIFIED
+              </span>
+              <span class="partner-type-icon">🌿</span>
+            </div>
+            <div class="partner-body">
+              <div class="partner-name">Physiozentrum München Ost</div>
+              <div class="partner-meta">
+                <span>Physiotherapie</span>
+                <span>·</span>
+                <span>1.2 km</span>
+              </div>
+              <div class="partner-foot">
+                <span class="rating"><span class="star">★</span> 4.9</span>
+                <span class="level-tag gold">GOLD-Slots</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="partner-card-sm">
+            <div class="partner-img yoga">
+              <span class="verified-pill">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                VERIFIED
+              </span>
+              <span class="partner-type-icon">🧘</span>
+            </div>
+            <div class="partner-body">
+              <div class="partner-name">YogaFlow Studio</div>
+              <div class="partner-meta">
+                <span>Bewegung</span>
+                <span>·</span>
+                <span>2.8 km</span>
+              </div>
+              <div class="partner-foot">
+                <span class="rating"><span class="star">★</span> 4.7</span>
+                <span class="level-tag all">Für alle</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="partner-card-sm">
+            <div class="partner-img online">
+              <span class="verified-pill">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                VERIFIED
+              </span>
+              <span class="partner-type-icon">🌙</span>
+            </div>
+            <div class="partner-body">
+              <div class="partner-name">MindfulNess Online</div>
+              <div class="partner-meta">
+                <span>Mental Balance</span>
+                <span>·</span>
+                <span>digital</span>
+              </div>
+              <div class="partner-foot">
+                <span class="rating"><span class="star">★</span> 4.6</span>
+                <span class="level-tag silver">SILVER+</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Surveys + Privacy -->
+      <div class="grid grid-2 mb-5">
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Offene Umfragen</div>
+              <div class="card-sub">Deine Teilnahme bleibt anonym</div>
+            </div>
+            <span class="chip amber">+10 Punkte</span>
+          </div>
+
+          <div class="survey-card mb-3">
+            <div class="survey-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19V6l12-3v13M9 19c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z"/></svg>
+            </div>
+            <div class="survey-body">
+              <div class="survey-title">Teamstimmung April</div>
+              <div class="survey-meta">6 Fragen · ~3 Min. · Noch 4 Tage offen</div>
+            </div>
+            <button class="btn btn-amber btn-sm">Ausfüllen</button>
+          </div>
+
+          <div class="survey-card">
+            <div class="survey-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            </div>
+            <div class="survey-body">
+              <div class="survey-title">Arbeitsplatz-Ergonomie</div>
+              <div class="survey-meta">9 Fragen · ~5 Min. · Noch 12 Tage offen</div>
+            </div>
+            <button class="btn btn-amber btn-sm">Ausfüllen</button>
+          </div>
+        </div>
+
+        <div class="card" style="background: linear-gradient(135deg, var(--elyo-green-50), var(--elyo-surface));">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Deine Daten gehören dir</div>
+              <div class="card-sub">Transparenz-Überblick</div>
+            </div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--elyo-green-500)" stroke-width="2">
+              <path d="M12 2L3 7v6c0 5 4 9 9 10 5-1 9-5 9-10V7l-9-5z"/>
+              <path d="M9 12l2 2 4-4"/>
+            </svg>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--elyo-line);">
+              <span style="width:34px;height:34px;border-radius:10px;background:var(--elyo-green-100);display:grid;place-items:center;flex-shrink:0;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--elyo-green-700)" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              </span>
+              <div style="flex:1;font-size:13.5px;">
+                <strong style="color:var(--elyo-ink)">Dein Arbeitgeber sieht nur aggregierte Teamwerte</strong><br>
+                <span style="color:var(--elyo-ink-mute);font-size:12.5px;">Einzel-Check-ins sind technisch nicht zugreifbar.</span>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--elyo-line);">
+              <span style="width:34px;height:34px;border-radius:10px;background:var(--elyo-green-100);display:grid;place-items:center;flex-shrink:0;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--elyo-green-700)" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              </span>
+              <div style="flex:1;font-size:13.5px;">
+                <strong style="color:var(--elyo-ink)">Wearable-Daten bleiben auf deinem Gerät</strong><br>
+                <span style="color:var(--elyo-ink-mute);font-size:12.5px;">Synchronisation anonymisiert · DSGVO-konform.</span>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; padding:10px 0;">
+              <span style="width:34px;height:34px;border-radius:10px;background:var(--elyo-green-100);display:grid;place-items:center;flex-shrink:0;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--elyo-green-700)" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              </span>
+              <div style="flex:1;font-size:13.5px;">
+                <strong style="color:var(--elyo-ink)">Export & Löschen jederzeit möglich</strong><br>
+                <span style="color:var(--elyo-ink-mute);font-size:12.5px;">Ein Klick. Sofort. Ohne Begründung.</span>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-ghost btn-sm" style="margin-top:16px;width:100%;justify-content:center;">Privatsphäre-Einstellungen öffnen →</button>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ELYO · Partner-Login — Zugang zum geprüften Experten-Netzwerk</title>
+<link rel="stylesheet" href="elyo.css">
+<style>
+/* ================================================================
+   Partner-Login — Split-Layout, vertrauensorientiert
+   Links: visuelle Markenseite mit Benefits
+   Rechts: fokussiertes Login-Formular
+   ================================================================ */
+
+body { background: var(--elyo-bg); min-height: 100vh; }
+
+.login-shell {
+  min-height: calc(100vh - 40px);
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  background: var(--elyo-bg);
+}
+
+/* ================================================================
+   Linke Seite — Markenpanel
+   ================================================================ */
+.brand-panel {
+  background: linear-gradient(135deg, var(--elyo-green-700) 0%, var(--elyo-green-500) 55%, #264F42 100%);
+  color: #FDF8EC;
+  padding: 48px 56px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Organischer Glow rechts oben */
+.brand-panel::before {
+  content: "";
+  position: absolute;
+  top: -120px; right: -100px;
+  width: 460px; height: 460px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,145,58,0.28), transparent 65%);
+  pointer-events: none;
+}
+/* Dezente Linien als Textur */
+.brand-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 15% 85%, rgba(200,145,58,0.12), transparent 40%),
+    radial-gradient(circle at 80% 30%, rgba(255,255,255,0.04), transparent 35%);
+  pointer-events: none;
+}
+
+.brand-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+}
+.brand-head .logo-mark {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--elyo-amber-300), var(--elyo-amber-500));
+  display: grid; place-items: center;
+  color: var(--elyo-green-900);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 21px;
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.18);
+}
+.brand-head .brand-name {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 500;
+  color: #FDF8EC;
+  letter-spacing: 0.01em;
+}
+.brand-head .brand-sub {
+  margin-left: auto;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--elyo-amber-300);
+  font-weight: 600;
+}
+
+.brand-hero {
+  margin-top: 72px;
+  position: relative;
+  z-index: 2;
+  max-width: 520px;
+}
+.brand-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(200,145,58,0.2);
+  border: 1px solid rgba(200,145,58,0.3);
+  color: var(--elyo-amber-100);
+  border-radius: 999px;
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+.brand-hero h1 {
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 400;
+  color: #FDF8EC;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  margin-bottom: 20px;
+}
+.brand-hero h1 em {
+  font-style: italic;
+  color: var(--elyo-amber-300);
+  font-weight: 500;
+}
+.brand-hero p {
+  color: #CDDCD4;
+  font-size: 16px;
+  line-height: 1.55;
+  max-width: 460px;
+  margin: 0;
+}
+
+/* Benefits-Block */
+.benefits {
+  margin-top: 44px;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 480px;
+}
+.benefit-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 18px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
+}
+.benefit-icon {
+  width: 40px; height: 40px;
+  border-radius: 11px;
+  background: rgba(200,145,58,0.25);
+  color: var(--elyo-amber-300);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.benefit-body { flex: 1; }
+.benefit-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: #FDF8EC;
+  margin-bottom: 3px;
+}
+.benefit-desc {
+  font-size: 13px;
+  color: #A5B9B2;
+  line-height: 1.5;
+}
+
+/* Stats am unteren Rand */
+.brand-stats {
+  margin-top: auto;
+  padding-top: 40px;
+  display: flex;
+  gap: 40px;
+  position: relative;
+  z-index: 2;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  padding-bottom: 0;
+}
+.brand-stat {
+  display: flex;
+  flex-direction: column;
+}
+.brand-stat-num {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 500;
+  color: var(--elyo-amber-300);
+  letter-spacing: -0.01em;
+}
+.brand-stat-lbl {
+  font-size: 11.5px;
+  color: #A5B9B2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ================================================================
+   Rechte Seite — Formular
+   ================================================================ */
+.form-panel {
+  padding: 48px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--elyo-bg);
+  position: relative;
+}
+
+.form-head {
+  margin-bottom: 32px;
+}
+.form-role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 8px;
+  background: var(--elyo-amber-50);
+  border: 1px solid var(--elyo-amber-100);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--elyo-amber-700);
+  margin-bottom: 20px;
+}
+.form-role-pill-icon {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--elyo-amber-500);
+  color: #FDF8EC;
+  display: grid; place-items: center;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.form-head h2 {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 500;
+  color: var(--elyo-green-700);
+  letter-spacing: -0.015em;
+  margin-bottom: 8px;
+}
+.form-head p {
+  color: var(--elyo-ink-soft);
+  font-size: 14.5px;
+  margin: 0;
+  line-height: 1.55;
+}
+
+/* SSO-Buttons */
+.sso-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.sso-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--elyo-surface);
+  border: 1px solid var(--elyo-line);
+  border-radius: 10px;
+  color: var(--elyo-ink);
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+.sso-btn:hover { background: var(--elyo-surface-2); border-color: var(--elyo-green-200); }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 22px 0;
+  color: var(--elyo-ink-mute);
+  font-size: 12px;
+  font-weight: 500;
+}
+.divider::before, .divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--elyo-line);
+}
+
+/* Form-Felder */
+.field {
+  margin-bottom: 16px;
+}
+.field-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--elyo-ink-soft);
+  letter-spacing: 0.02em;
+  margin-bottom: 7px;
+}
+.field-label .helper {
+  font-size: 12px;
+  color: var(--elyo-green-500);
+  text-decoration: none;
+  font-weight: 500;
+}
+.field-label .helper:hover { text-decoration: underline; }
+
+.field-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--elyo-surface);
+  border: 1px solid var(--elyo-line);
+  border-radius: 11px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--elyo-ink);
+  transition: all 160ms ease;
+  outline: none;
+}
+.field-input:focus {
+  border-color: var(--elyo-green-300);
+  box-shadow: 0 0 0 4px rgba(92,133,116,0.15);
+  background: #fff;
+}
+.field-input::placeholder { color: var(--elyo-ink-mute); }
+
+.field-input-wrap { position: relative; }
+.field-input-wrap .field-icon-right {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--elyo-ink-mute);
+  cursor: pointer;
+}
+
+/* Checkbox-Zeile */
+.row-check {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+.check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13.5px;
+  color: var(--elyo-ink-soft);
+  cursor: pointer;
+}
+.check-box {
+  width: 18px; height: 18px;
+  border: 1.5px solid var(--elyo-line);
+  background: var(--elyo-surface);
+  border-radius: 5px;
+  display: grid; place-items: center;
+  transition: all 160ms ease;
+}
+.check-box.checked {
+  background: var(--elyo-green-500);
+  border-color: var(--elyo-green-500);
+  color: #FDF8EC;
+}
+
+.btn-submit {
+  width: 100%;
+  justify-content: center;
+  padding: 14px;
+  font-size: 15px;
+  border-radius: 11px;
+}
+
+/* Vertrauens-Footer */
+.trust-row {
+  margin-top: 28px;
+  padding: 16px 18px;
+  background: var(--elyo-green-50);
+  border: 1px solid var(--elyo-green-100);
+  border-radius: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 12.5px;
+  color: var(--elyo-green-700);
+  line-height: 1.55;
+}
+.trust-row svg { flex-shrink: 0; margin-top: 1px; }
+
+.signup-hint {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--elyo-ink-soft);
+}
+.signup-hint a {
+  color: var(--elyo-green-500);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1.5px solid var(--elyo-amber-300);
+  padding-bottom: 1px;
+}
+.signup-hint a:hover { color: var(--elyo-green-700); }
+
+.login-foot {
+  position: absolute;
+  bottom: 24px;
+  left: 56px; right: 56px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--elyo-ink-mute);
+}
+.login-foot a { color: var(--elyo-ink-soft); text-decoration: none; margin-left: 16px; }
+.login-foot a:hover { color: var(--elyo-green-500); }
+
+/* Mobile responsive */
+@media (max-width: 900px) {
+  .login-shell { grid-template-columns: 1fr; }
+  .brand-panel { padding: 32px 24px; }
+  .brand-hero { margin-top: 32px; }
+  .brand-hero h1 { font-size: 32px; }
+  .benefits { margin-top: 28px; }
+  .brand-stats { gap: 24px; padding-top: 28px; }
+  .form-panel { padding: 32px 24px 80px; }
+  .login-foot { left: 24px; right: 24px; flex-direction: column; gap: 8px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Rollen-Leiste -->
+<div class="role-switch">
+  <div class="role-switch-inner">
+    <span class="role-switch-label">◆ ELYO Demo-Modus</span>
+    <span style="color:rgba(237,229,208,0.5)">Oberflächen-Vorschau · Phase 0</span>
+    <div class="role-switch-links">
+      <a href="unternehmen.html">Unternehmen</a>
+      <a href="mitarbeiter.html">Mitarbeiter</a>
+      <a href="partner-login.html" class="active">Partner-Login</a>
+    </div>
+  </div>
+</div>
+
+<div class="login-shell">
+
+  <!-- ============ LINKS: MARKENPANEL ============ -->
+  <section class="brand-panel">
+
+    <header class="brand-head">
+      <div class="logo-mark">E</div>
+      <div class="brand-name">elyo</div>
+      <span class="brand-sub">Partner-Portal</span>
+    </header>
+
+    <div class="brand-hero">
+      <span class="brand-kicker">◇ Für Gesundheitsexperten · 2026</span>
+      <h1>Werde Teil eines <em>kuratierten Netzwerks</em> für betriebliche Vitalität.</h1>
+      <p>ELYO verbindet geprüfte lokale und digitale Anbieter mit Unternehmen, die Gesundheit strukturell ernst nehmen. Qualität vor Quantität — jede Aufnahme wird persönlich geprüft.</p>
+    </div>
+
+    <div class="benefits">
+
+      <div class="benefit-row">
+        <div class="benefit-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L3 7v6c0 5 4 9 9 10 5-1 9-5 9-10V7l-9-5z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <div class="benefit-body">
+          <div class="benefit-title">ELYO-Verified Status</div>
+          <div class="benefit-desc">Nach erfolgreicher Prüfung trägst du ein Gütesiegel, das Mitarbeiter in der gesamten App sehen — klare Auffindbarkeit im lokalen Suchradius.</div>
+        </div>
+      </div>
+
+      <div class="benefit-row">
+        <div class="benefit-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </div>
+        <div class="benefit-body">
+          <div class="benefit-title">Direkte Buchungen & Level-Slots</div>
+          <div class="benefit-desc">Reserviere GOLD-Kontingente für Fast-Lane-Kunden und reagiere innerhalb 24 h — ELYO steuert den Zugang nach Mitarbeiter-Level.</div>
+        </div>
+      </div>
+
+      <div class="benefit-row">
+        <div class="benefit-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        </div>
+        <div class="benefit-body">
+          <div class="benefit-title">Transparente Analytics</div>
+          <div class="benefit-desc">Profilaufrufe, Angebots-Clicks und Bewertungstrends — aggregiert und in Echtzeit. Deine Daten, deine Kontrolle.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="brand-stats">
+      <div class="brand-stat">
+        <div class="brand-stat-num">340+</div>
+        <div class="brand-stat-lbl">Geprüfte Partner</div>
+      </div>
+      <div class="brand-stat">
+        <div class="brand-stat-num">14 Tage</div>
+        <div class="brand-stat-lbl">Ø Verifikationszeit</div>
+      </div>
+      <div class="brand-stat">
+        <div class="brand-stat-num">Ø 4.8 ★</div>
+        <div class="brand-stat-lbl">Nutzerbewertung</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RECHTS: FORMULAR ============ -->
+  <section class="form-panel">
+
+    <div class="form-head">
+      <div class="form-role-pill">
+        <span class="form-role-pill-icon">P</span>
+        Partner-Zugang
+      </div>
+      <h2>Willkommen zurück.</h2>
+      <p>Melde dich in deinem Partner-Portal an, um Verfügbarkeiten zu pflegen, Bewertungen einzusehen und deine Angebote zu aktualisieren.</p>
+    </div>
+
+    <!-- SSO -->
+    <div class="sso-row">
+      <button class="sso-btn">
+        <!-- Microsoft -->
+        <svg width="16" height="16" viewBox="0 0 23 23" fill="none">
+          <rect x="1" y="1" width="10" height="10" fill="#F35325"/>
+          <rect x="12" y="1" width="10" height="10" fill="#81BC06"/>
+          <rect x="1" y="12" width="10" height="10" fill="#05A6F0"/>
+          <rect x="12" y="12" width="10" height="10" fill="#FFBA08"/>
+        </svg>
+        Microsoft
+      </button>
+      <button class="sso-btn">
+        <!-- Google -->
+        <svg width="16" height="16" viewBox="0 0 48 48">
+          <path fill="#FFC107" d="M43.6 20.1H24v7.9h11.3c-1.6 4.2-5.5 7-11.3 7A11.9 11.9 0 0112 23a11.9 11.9 0 0112-12c3 0 5.8 1.1 8 3l5.6-5.6A19.9 19.9 0 004 23a20 20 0 0020 20c11.5 0 19.6-8.1 19.6-19.6 0-1.3-.2-2.2-.4-3.3z"/>
+          <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8A12 12 0 0124 11c3 0 5.8 1.1 8 3l5.6-5.6A19.9 19.9 0 004 23c0-3 .7-5.9 2.3-8.3z"/>
+          <path fill="#4CAF50" d="M24 43a20 20 0 0013.5-5.2l-6.2-5.2a11.9 11.9 0 01-7.3 2.5c-5.8 0-9.7-2.8-11.3-7L6 32.4A20 20 0 0024 43z"/>
+          <path fill="#1976D2" d="M43.6 20.1H24v7.9h11.3c-.8 2.2-2.2 4-4 5.2l6.2 5.2c-.4.4 6.5-4.8 6.5-14.7 0-1.3-.2-2.5-.4-3.6z"/>
+        </svg>
+        Google
+      </button>
+    </div>
+
+    <div class="divider">oder mit E-Mail anmelden</div>
+
+    <!-- E-Mail -->
+    <div class="field">
+      <div class="field-label">
+        <span>Geschäftliche E-Mail</span>
+      </div>
+      <input class="field-input" type="email" placeholder="anna.berger@praxis-berger.de" value="anna.berger@praxis-berger.de">
+    </div>
+
+    <!-- Passwort -->
+    <div class="field">
+      <div class="field-label">
+        <span>Passwort</span>
+        <a href="#" class="helper">Vergessen?</a>
+      </div>
+      <div class="field-input-wrap">
+        <input class="field-input" type="password" placeholder="Passwort eingeben" value="••••••••••" style="padding-right:42px;">
+        <span class="field-icon-right">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </span>
+      </div>
+    </div>
+
+    <!-- Angemeldet bleiben -->
+    <div class="row-check">
+      <label class="check-label">
+        <span class="check-box checked">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6L9 17l-5-5"/></svg>
+        </span>
+        Angemeldet bleiben (30 Tage)
+      </label>
+      <span style="font-size:12px;color:var(--elyo-ink-mute);display:inline-flex;align-items:center;gap:6px;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        2FA aktiv
+      </span>
+    </div>
+
+    <button class="btn btn-primary btn-submit">
+      Als Partner anmelden
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
+    </button>
+
+    <!-- Trust Row -->
+    <div class="trust-row">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L3 7v6c0 5 4 9 9 10 5-1 9-5 9-10V7l-9-5z"/>
+        <path d="M9 12l2 2 4-4"/>
+      </svg>
+      <div>
+        <strong style="font-weight:600;">DSGVO-konform · ISO 27001 · TLS 1.3 ·</strong> Patientendaten nutzt ELYO <strong>niemals</strong> — wir vermitteln ausschließlich Kontakte. Therapeutische Dokumentation verbleibt bei dir.
+      </div>
+    </div>
+
+    <div class="signup-hint">
+      Noch kein Partner-Account? <a href="#">Verifizierung als ELYO-Partner beantragen →</a>
+    </div>
+
+    <div class="login-foot">
+      <span>© 2026 ELYO GmbH · München</span>
+      <span>
+        <a href="#">Impressum</a>
+        <a href="#">Datenschutz</a>
+        <a href="#">Partner-AGB</a>
+        <a href="#">Support</a>
+      </span>
+    </div>
+
+  </section>
+
+</div>
+
+</body>
+</html>
